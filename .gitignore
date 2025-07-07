@@ -1,0 +1,6 @@
+# Python / Django
+__pycache__/
+*.pyc
+.DS_Store
+myvenv/
+.env
