@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import HelloWorldView
+from .views import DoubleNumberView
 
 urlpatterns = [
-    path('hello/', HelloWorldView.as_view(), name='hello_world'),
+    path('double-num/', DoubleNumberView.as_view(), name='double_num'),
 ]
