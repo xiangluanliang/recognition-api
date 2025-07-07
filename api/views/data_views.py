@@ -1,4 +1,4 @@
-# api/views.py
+# api/views/data_views.py
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
