@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from api.models import TestNumber
+from api.models import User
 
 
 class DoubleNumberView(APIView):
