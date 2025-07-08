@@ -1,5 +1,5 @@
 # api/admin.py
 from django.contrib import admin
-from .models import TestNumber
+from .models import User
 
-admin.site.register(TestNumber)
+admin.site.register(User)
