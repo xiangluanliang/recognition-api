@@ -1,17 +1,15 @@
-from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 
-class User(models.Model):
+class User(AbstractUser):
     id = models.BigAutoField(primary_key=True)
-    username = models.CharField(max_length=64, null=False, unique=True)
-    password_hash = models.CharField(max_length=128, null=False)
-    role_id = models.BigIntegerField(null=False)
+    role_id = models.BigIntegerField(null=True)
     status = models.PositiveSmallIntegerField(null=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
 
     class Meta:
-        db_table = 'user'
+        db_table = 'users'
         verbose_name = '用户'
         verbose_name_plural = '用户'
 
