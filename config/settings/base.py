@@ -140,3 +140,5 @@ AUTH_USER_MODEL = 'api.User'  # 如果你的 app 叫 api，就写 api.User
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+LOGIN_URL = 'rest_framework:login'
+LOGOUT_URL = 'rest_framework:logout'
