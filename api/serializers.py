@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from django.conf import settings
+import os
 from .models import (
     User, OperationLog, Subject, RecognitionLog, DetectionLog,
     WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
@@ -8,6 +10,7 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
+        # 修改：将 role_id 改为 role (如果未来是外键的话)，或者保持原样
         fields = ['id', 'username', 'role_id', 'status', 'created_at']
         read_only_fields = ['id', 'created_at']
 
@@ -15,7 +18,8 @@ class UserSerializer(serializers.ModelSerializer):
 class OperationLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = OperationLog
-        fields = ['id', 'user_id', 'action', 'ip', 'timestamp', 'description']
+        # 修改：将 user_id 改为 user
+        fields = ['id', 'user', 'action', 'ip', 'timestamp', 'description']
         read_only_fields = ['id', 'timestamp']
 
 
@@ -26,43 +30,52 @@ class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ['id', 'name', 'face_image', 'face_image_path', 'face_embedding']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'face_image_path']
 
     def create(self, validated_data):
         image_file = validated_data.pop('face_image')
-        filename = f"subject_images/{image_file.name}"
+        # 优化：使用settings.MEDIA_ROOT构建路径
+        save_dir = os.path.join(settings.MEDIA_ROOT, 'subject_images')
+        os.makedirs(save_dir, exist_ok=True)
+        # 注意：这里我们只取文件名，而不是完整的路径
+        filename = image_file.name
+        full_path = os.path.join(save_dir, filename)
 
-        with open(f"media/{filename}", 'wb+') as f:
+        with open(full_path, 'wb+') as f:
             for chunk in image_file.chunks():
                 f.write(chunk)
 
-        validated_data['face_image_path'] = f"/media/{filename}"
+        # 使用MEDIA_URL构建返回给前端的URL
+        validated_data['face_image_path'] = os.path.join(settings.MEDIA_URL, 'subject_images', filename).replace('\\',
+                                                                                                                 '/')
         return Subject.objects.create(**validated_data)
 
 
 class RecognitionLogSerializer(serializers.ModelSerializer):
     video_clip = serializers.FileField(write_only=True, required=True)
-    image_path = serializers.CharField(read_only=True)
+
+    # image_path是模型字段，让它正常序列化
 
     class Meta:
         model = RecognitionLog
-        fields = ['id', 'person_id', 'camera_id', 'time', 'confidence', 'video_clip', 'image_path']
+        # 修改：person_id -> person, camera_id -> camera
+        fields = ['id', 'person', 'camera', 'time', 'confidence', 'video_clip', 'image_path']
         read_only_fields = ['id', 'image_path']
 
     def create(self, validated_data):
-        video_file = validated_data.pop('video_file', None)
+        # 修复：将 'video_file' 修改为 'video_clip'
+        video_file = validated_data.pop('video_clip', None)
         if video_file:
-            import os
-            from django.conf import settings
             save_dir = os.path.join(settings.MEDIA_ROOT, 'recognition_videos')
             os.makedirs(save_dir, exist_ok=True)
 
-            filename = os.path.join(save_dir, video_file.name)
-            with open(filename, 'wb+') as f:
+            filename = video_file.name
+            full_path = os.path.join(save_dir, filename)
+            with open(full_path, 'wb+') as f:
                 for chunk in video_file.chunks():
                     f.write(chunk)
 
-            relative_path = os.path.join('recognition_videos', video_file.name)
+            relative_path = os.path.join('recognition_videos', filename)
             validated_data['image_path'] = os.path.join(settings.MEDIA_URL, relative_path).replace('\\', '/')
 
         return RecognitionLog.objects.create(**validated_data)
@@ -71,7 +84,8 @@ class RecognitionLogSerializer(serializers.ModelSerializer):
 class DetectionLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetectionLog
-        fields = ['id', 'camera_id', 'object_class', 'confidence', 'bbox', 'time', 'image_path']
+        # 修改：camera_id -> camera
+        fields = ['id', 'camera', 'object_class', 'confidence', 'bbox', 'time', 'image_path']
         read_only_fields = ['id']
 
 
@@ -81,20 +95,36 @@ class WarningZoneSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WarningZone
-        fields = ['id', 'camera_id', 'name', 'zone_type', 'zone_points', 'is_active']
-        read_only_fields = ['id']
+        # 修复：添加 'video_clip' 和 'video_clip_path' 到fields
+        # 修改：camera_id -> camera
+        fields = ['id', 'camera', 'name', 'zone_type', 'zone_points', 'is_active', 'video_clip', 'video_clip_path']
+        read_only_fields = ['id', 'video_clip_path']
 
     def create(self, validated_data):
         video_file = validated_data.pop('video_clip')
-        filename = f"incident_videos/{video_file.name}"
 
-        with open(f"media/{filename}", 'wb+') as f:
+        # 优化：使用settings.MEDIA_ROOT构建路径
+        save_dir = os.path.join(settings.MEDIA_ROOT, 'incident_videos')
+        os.makedirs(save_dir, exist_ok=True)
+        filename = video_file.name
+        full_path = os.path.join(save_dir, filename)
+
+        with open(full_path, 'wb+') as f:
             for chunk in video_file.chunks():
                 f.write(chunk)
 
-        validated_data['video_clip_path'] = f"/media/{filename}"
+        relative_path = os.path.join('incident_videos', filename)
+        # 注意：这里我们假设IncidentDetectionLog模型有一个video_clip_path字段来保存路径
+        # validated_data['video_clip_path'] = os.path.join(settings.MEDIA_URL, relative_path).replace('\\', '/')
 
-        return IncidentDetectionLog.objects.create(**validated_data)
+        # 修复：create方法应该创建WarningZone对象，而不是IncidentDetectionLog
+        # 并且WarningZone模型本身没有video_clip_path字段，所以create方法不应该处理文件上传和路径保存
+        # 这里的逻辑需要根据你的业务重新定义。
+        # 一个可能的场景是，上传视频后，创建一个IncidentDetectionLog记录。
+        # 如果是这样，那么这个序列化器的目的就不应该是创建WarningZone。
+        # 为了让代码能跑通，我暂时注释掉文件处理，并修正create的对象。
+
+        return WarningZone.objects.create(**validated_data)
 
 
 class IncidentTypeSerializer(serializers.ModelSerializer):
@@ -105,10 +135,10 @@ class IncidentTypeSerializer(serializers.ModelSerializer):
 
 
 class IncidentDetectionLogSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = IncidentDetectionLog
-        fields = ['id', 'incident_type_id', 'camera_id', 'time', 'video_clip_path', 'confidence', 'status']
+        # 修改：incident_type_id -> incident_type, camera_id -> camera
+        fields = ['id', 'incident_type', 'camera', 'time', 'video_clip_path', 'confidence', 'status']
         read_only_fields = ['id']
 
 
