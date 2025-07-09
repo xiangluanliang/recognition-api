@@ -1,11 +1,11 @@
 from rest_framework import serializers
 from django.conf import settings
+from django.contrib.auth import get_user_model
 import os
 from .models import (
     User, OperationLog, Subject, RecognitionLog, DetectionLog,
     WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
 )
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -154,3 +154,24 @@ class AlarmLogSerializer(serializers.ModelSerializer):
         model = AlarmLog
         fields = ['id', 'source_type', 'source_id', 'time', 'method', 'receiver', 'result']
         read_only_fields = ['id']
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'first_name', 'last_name']
+        # 你有 role_id 和 status，如果注册时不需要用户选，就不写进去
+
+    def create(self, validated_data):
+        user = User(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            is_active=True,
+            status=1,  # 默认设为启用，你可以根据需要改
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user

@@ -14,7 +14,7 @@ from .views.data_views import (
     IncidentDetectionLogViewSet,
     CameraViewSet,
     AlarmLogViewSet,
-    UserViewSet,
+    UserViewSet, RegisterView,
 )
 
 router = DefaultRouter()
@@ -31,6 +31,7 @@ router.register(r'alarm_logs', AlarmLogViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('register/', RegisterView.as_view(), name='register'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
