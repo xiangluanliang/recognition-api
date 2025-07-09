@@ -23,6 +23,17 @@ pipeline {
                 }
             }
         }
+        stage('Collect Static Files') {
+            steps {
+                script {
+                    if (env.BRANCH_NAME == 'master') {
+                        sh "source /var/www/recognition-api/venv/bin/activate && python manage.py collectstatic --noinput --settings=config.settings.production"
+                    } else if (env.BRANCH_NAME == 'test') {
+                        sh "source /var/www/recognition-api/venv/bin/activate && python manage.py collectstatic --noinput --settings=config.settings.test"
+                    }
+                }
+            }
+        }
         stage('Restart Application') {
             steps {
                 script {
