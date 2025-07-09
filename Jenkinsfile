@@ -10,18 +10,17 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-            stage('Install Dependencies') {
-                steps {
-                    echo "在虚拟环境中安装依赖..."
-                    sh '''
-                        . /var/www/recognition-api/venv/bin/activate
-                        pip install --no-cache-dir --retries 3 --timeout 60 -r requirements.txt \
-                            -i https://pypi.tuna.tsinghua.edu.cn/simple \
-                            --trusted-host pypi.tuna.tsinghua.edu.cn
-                    '''
-                }
+            steps {
+                echo "在虚拟环境中安装依赖..."
+                sh '''
+                    . /var/www/recognition-api/venv/bin/activate
+                    pip install --no-cache-dir --retries 3 --timeout 60 -r requirements.txt \
+                        -i https://pypi.tuna.tsinghua.edu.cn/simple \
+                        --trusted-host pypi.tuna.tsinghua.edu.cn
+                '''
             }
         }
+
 
         stage('Migrate Database') {
             steps {
