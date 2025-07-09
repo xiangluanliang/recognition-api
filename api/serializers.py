@@ -42,29 +42,18 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 class RecognitionLogSerializer(serializers.ModelSerializer):
     video_clip = serializers.FileField(write_only=True, required=True)
-    image_path = serializers.CharField(read_only=True)
+    image_path = serializers.SerializerMethodField()
 
     class Meta:
         model = RecognitionLog
         fields = ['id', 'person_id', 'camera_id', 'time', 'confidence', 'video_clip', 'image_path']
-        read_only_fields = ['id', 'image_path']
+
+    def get_image_path(self, obj):
+        if obj.video_clip:
+            return obj.video_clip.url
+        return None
 
     def create(self, validated_data):
-        video_file = validated_data.pop('video_file', None)
-        if video_file:
-            import os
-            from django.conf import settings
-            save_dir = os.path.join(settings.MEDIA_ROOT, 'recognition_videos')
-            os.makedirs(save_dir, exist_ok=True)
-
-            filename = os.path.join(save_dir, video_file.name)
-            with open(filename, 'wb+') as f:
-                for chunk in video_file.chunks():
-                    f.write(chunk)
-
-            relative_path = os.path.join('recognition_videos', video_file.name)
-            validated_data['image_path'] = os.path.join(settings.MEDIA_URL, relative_path).replace('\\', '/')
-
         return RecognitionLog.objects.create(**validated_data)
 
 

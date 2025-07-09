@@ -81,10 +81,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rg_db',
+        'NAME': 'rg_db_test',
         'USER': 'rg_user',
+
         'PASSWORD': 'Zyjjh0707',
+
         'HOST': '8.152.101.217',
+        # 'HOST': '127.0.0.1',
         'PORT': '5432',
     }
 }
@@ -139,3 +142,11 @@ AUTH_USER_MODEL = 'api.User'  # 如果你的 app 叫 api，就写 api.User
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}

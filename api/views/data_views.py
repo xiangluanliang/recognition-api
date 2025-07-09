@@ -2,9 +2,7 @@
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.views import APIView
-from rest_framework.response import Response
+
 from ..models import (
     User, OperationLog, Subject, RecognitionLog, DetectionLog,
     WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
@@ -69,6 +67,10 @@ class RecognitionLogViewSet(viewsets.ModelViewSet):
     queryset = RecognitionLog.objects.all().order_by('-time')
     serializer_class = RecognitionLogSerializer
     permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        print("【调试】当前用户是：", request.user)
+        return super().create(request, *args, **kwargs)
 
 
 class DetectionLogViewSet(viewsets.ModelViewSet):

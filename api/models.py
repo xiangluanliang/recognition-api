@@ -50,12 +50,12 @@ class Subject(models.Model):
 
 
 class RecognitionLog(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    person_id = models.BigIntegerField(null=False)
-    camera_id = models.BigIntegerField(null=False)
-    time = models.DateTimeField(auto_now_add=False, null=False)
-    confidence = models.FloatField(null=False)
-    image_path = models.CharField(max_length=255, null=False)
+    person_id = models.IntegerField()
+    camera_id = models.IntegerField()
+    time = models.DateTimeField()
+    confidence = models.FloatField()
+    video_clip = models.FileField(upload_to='recognition_videos/')
+    image_path = models.CharField(max_length=255, blank=True)  # 如果一定需要单独保存路径
 
     class Meta:
         db_table = 'recognition_log'
