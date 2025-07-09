@@ -30,10 +30,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        # 管理员可以查看所有用户，普通用户只能看到自己
+
+        # 先检查用户是否已登录认
+        if not user.is_authenticated:
+            return User.objects.none()
+        
+        # 只有当用户登录后，才安全地访问 role_id
         if user.role_id == 1:
             return User.objects.all()
-        return User.objects.filter(id=user.id)
+        else:
+            return User.objects.filter(pk=user.pk)
 
     def perform_update(self, serializer):
         user = self.request.user
