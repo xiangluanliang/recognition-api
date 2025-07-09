@@ -2,11 +2,21 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
+class Role(models.Model):
+    id = models.IntegerField(primary_key=True)
+    role_name = models.CharField(null=False)
+
+    class Meta:
+        db_table = 'role'
+        verbose_name = '角色'
+        verbose_name_plural = '角色'
+
+
 class User(AbstractUser):
     # AbstractUser已包含id字段，此处可省略或保留
     id = models.BigAutoField(primary_key=True)
     # 注意：如果存在Role模型，这里应该是一个ForeignKey
-    role_id = models.BigIntegerField(null=True)
+    role_id = models.ForeignKey(Role,on_delete=models.CASCADE(), db_column='role_id')
     status = models.PositiveSmallIntegerField(null=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
 
