@@ -16,7 +16,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rg_db_production',
-        'USER': 'rg_user',
+        'USER': 'rg_user_prod',
         'PASSWORD': 'Zyjjh0707',
         'HOST': '8.152.101.217',
         'PORT': '5432',
