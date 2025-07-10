@@ -11,6 +11,7 @@ from .models import (
     IncidentDetectionLog,
     Camera,
     AlarmLog,
+    VideoAnalysisTask
 )
 
 admin.site.register(User)
@@ -23,4 +24,5 @@ admin.site.register(IncidentType)
 admin.site.register(IncidentDetectionLog)
 admin.site.register(Camera)
 admin.site.register(AlarmLog)
+admin.site.register(VideoAnalysisTask)
 
