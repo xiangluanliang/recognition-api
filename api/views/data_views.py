@@ -160,7 +160,8 @@ class LoginView(APIView):
                     'username': user.username,
                     'email': user.email,
                     'status': user.status,
-                    'created_at': user.created_at
+                    'created_at': user.created_at,
+                    'role':user.role_id.id
                 }
             })
         else:

@@ -3,13 +3,13 @@ from django.contrib.auth import get_user_model
 import os
 from rest_framework import serializers
 from .models import (
-    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, VideoAnalysisTask, Feedback
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, VideoAnalysisTask, Feedback, Role
 )
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email',  'status', 'created_at']
+        fields = ['id', 'username', 'email', 'role_id','status', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
@@ -110,20 +110,22 @@ class AlarmLogSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    role_id = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all())  # 新增
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'first_name', 'last_name']
-        # 你有 role_id 和 status，如果注册时不需要用户选，就不写进去
+        fields = ['username', 'email', 'password', 'first_name', 'last_name', 'role_id']
 
     def create(self, validated_data):
+        role = validated_data.pop('role_id')
         user = User(
             username=validated_data['username'],
             email=validated_data['email'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
             is_active=True,
-            status=1,  # 默认设为启用，你可以根据需要改
+            status=1,
+            role_id=role
         )
         user.set_password(validated_data['password'])
         user.save()
