@@ -46,12 +46,11 @@ pipeline {
         stage('Run Django Commands') {
             steps {
                 echo "为 ${env.BRANCH_NAME} 环境执行数据库迁移和静态文件收集..."
+                // 现在的脚本非常简洁
                 sh """
                     set -e
                     cd ${env.DEPLOY_DIR}
                     . venv/bin/activate
-                    
-                    export \$(grep -v '^#' ${env.DEPLOY_DIR}/${env.ENV_FILE} | xargs)
                     
                     echo "执行数据库迁移..."
                     python manage.py migrate
