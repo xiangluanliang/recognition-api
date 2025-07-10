@@ -4,4 +4,4 @@ __pycache__/
 .DS_Store
 myvenv/
 .env
-.idea/
+.idea/script/received_videos/

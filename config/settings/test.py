@@ -1,22 +1,12 @@
 # test.py
-
 from .base import *
 
+# ========== 测试环境特定配置 ==========
 
-# 开启DEBUG模式，方便调试
+# 开启DEBUG模式
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rg_db',
-        'USER': 'rg_user',
-        'PASSWORD': 'Zyjjh0707',
-        'HOST': '8.152.101.217',
-        'PORT': '5432',
-    }
-}
-
+# 允许所有来源的跨域请求，方便测试
 CORS_ALLOW_ALL_ORIGINS = True

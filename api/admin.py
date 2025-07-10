@@ -1,5 +1,6 @@
 # api/admin.py
 from django.contrib import admin
+
 from .models import (
     User,
     OperationLog,
@@ -11,6 +12,8 @@ from .models import (
     IncidentDetectionLog,
     Camera,
     AlarmLog,
+    TestNumber, 
+    Feedback,
 )
 
 admin.site.register(User)
@@ -23,4 +26,8 @@ admin.site.register(IncidentType)
 admin.site.register(IncidentDetectionLog)
 admin.site.register(Camera)
 admin.site.register(AlarmLog)
+
+admin.site.register(TestNumber)
+admin.site.register(Feedback) # 注册Feedback模型
+
 

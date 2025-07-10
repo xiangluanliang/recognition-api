@@ -12,34 +12,36 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo "在虚拟环境中安装依赖..."
-                sh ". /var/www/recognition-api/venv/bin/activate && pip install -r requirements.txt"
+                sh '''
+                    . /var/www/recognition-api/venv/bin/activate
+                    pip install --no-cache-dir --retries 3 --timeout 60 -r requirements.txt \
+                        -i https://pypi.tuna.tsinghua.edu.cn/simple \
+                        --trusted-host pypi.tuna.tsinghua.edu.cn
+                '''
             }
         }
+
 
         stage('Migrate Database') {
             steps {
                 script {
-                    if (env.BRANCH_NAME == 'master') {
-                        echo "为 master 分支执行数据库迁移..."
-                        sh ". /var/www/recognition-api/venv/bin/activate && python manage.py migrate --settings=config.settings.production"
-                    } else if (env.BRANCH_NAME == 'test') {
-                        echo "为 test 分支执行数据库迁移..."
-                        sh ". /var/www/recognition-api/venv/bin/activate && python manage.py migrate --settings=config.settings.test"
-                    }
-                }
-            }
-        }
-        
-        stage('Collect Static Files') {
-            steps {
-                script {
-                    if (env.BRANCH_NAME == 'master') {
-                        echo "为 master 分支收集静态文件..."
-                        sh ". /var/www/recognition-api/venv/bin/activate && python manage.py collectstatic --noinput --settings=config.settings.production"
-                    } else if (env.BRANCH_NAME == 'test') {
-                        echo "为 test 分支收集静态文件..."
-                        sh ". /var/www/recognition-api/venv/bin/activate && python manage.py collectstatic --noinput --settings=config.settings.test"
-                    }
+                    // 根据分支名，选择要加载的环境文件
+                    def envFile = (env.BRANCH_NAME == 'master') ? '.env.production' : '.env.test'
+                    
+                    // 在一个sh块里执行所有需要环境变量的命令
+                    sh """
+                        . /var/www/recognition-api/venv/bin/activate
+                        
+                        # 从对应的.env文件加载并导出环境变量
+                        export \$(cat /var/www/recognition-api/${envFile} | xargs)
+                        
+                        # 现在，环境变量已经设置好了，可以执行命令了
+                        echo "为 ${env.BRANCH_NAME} 分支执行数据库迁移..."
+                        python manage.py migrate
+
+                        echo "为 ${env.BRANCH_NAME} 分支收集静态文件..."
+                        python manage.py collectstatic --noinput
+                    """
                 }
             }
         }

@@ -1,10 +1,10 @@
 # api/views/data_views.py
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, viewsets, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from ..models import (
     User, OperationLog, Subject, RecognitionLog, DetectionLog,
     WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
@@ -12,7 +12,8 @@ from ..models import (
 from ..serializers import (
     UserSerializer, OperationLogSerializer, SubjectSerializer, RecognitionLogSerializer,
     DetectionLogSerializer, WarningZoneSerializer, IncidentTypeSerializer,
-    IncidentDetectionLogSerializer, CameraSerializer, AlarmLogSerializer
+    IncidentDetectionLogSerializer, CameraSerializer, AlarmLogSerializer,
+    RegisterSerializer
 )
 
 
@@ -32,10 +33,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        # 管理员可以查看所有用户，普通用户只能看到自己
+
+        # 先检查用户是否已登录认
+        if not user.is_authenticated:
+            return User.objects.none()
+        
+        # 只有当用户登录后，才安全地访问 role_id
         if user.role_id == 1:
             return User.objects.all()
-        return User.objects.filter(id=user.id)
+        else:
+            return User.objects.filter(pk=user.pk)
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -69,6 +76,10 @@ class RecognitionLogViewSet(viewsets.ModelViewSet):
     queryset = RecognitionLog.objects.all().order_by('-time')
     serializer_class = RecognitionLogSerializer
     permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        print("【调试】当前用户是：", request.user)
+        return super().create(request, *args, **kwargs)
 
 
 class DetectionLogViewSet(viewsets.ModelViewSet):
@@ -105,3 +116,13 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
     queryset = AlarmLog.objects.all().order_by('-time')
     serializer_class = AlarmLogSerializer
     permission_classes = [IsAuthenticated]
+
+class RegisterView(APIView):
+    permission_classes = []  # 注册接口允许匿名访问
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "注册成功！"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

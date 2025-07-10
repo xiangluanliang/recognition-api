@@ -1,10 +1,25 @@
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+from django.contrib.auth.models import User 
+
+
+class Role(models.Model):
+    id = models.IntegerField(primary_key=True)
+    role_name = models.CharField(null=False)
+
+    class Meta:
+        db_table = 'role'
+        verbose_name = '角色'
+        verbose_name_plural = '角色'
+
 
 class User(AbstractUser):
+    # AbstractUser已包含id字段，此处可省略或保留
     id = models.BigAutoField(primary_key=True)
-    role_id = models.BigIntegerField(null=True)
+    # 注意：如果存在Role模型，这里应该是一个ForeignKey
+    role_id = models.ForeignKey(Role,on_delete=models.CASCADE(), db_column='role_id')
     status = models.PositiveSmallIntegerField(null=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
 
@@ -19,7 +34,8 @@ class User(AbstractUser):
 
 class OperationLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user_id = models.BigIntegerField(null=False)
+    # 修改：使用ForeignKey关联到User模型
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
     action = models.CharField(max_length=64, null=False)
     ip = models.CharField(max_length=45, null=False)
     timestamp = models.DateTimeField(auto_now_add=True, null=False)
@@ -31,7 +47,7 @@ class OperationLog(models.Model):
         verbose_name_plural = '操作日志'
 
     def __str__(self):
-        return f"{self.user_id} - {self.action} @ {self.timestamp}"
+        return f"{self.user.username} - {self.action} @ {self.timestamp}"
 
 
 class Subject(models.Model):
@@ -49,10 +65,28 @@ class Subject(models.Model):
         return self.name
 
 
+class Camera(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=64, null=False)
+    location = models.CharField(max_length=128, null=False)
+    stream_url = models.CharField(max_length=255, null=False)
+    camera_type = models.CharField(max_length=32, null=False)
+    is_active = models.BooleanField(null=False)
+
+    class Meta:
+        db_table = 'cameras'
+        verbose_name = '摄像头信息'
+        verbose_name_plural = '摄像头信息'
+
+    def __str__(self):
+        return self.name
+
+
 class RecognitionLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    person_id = models.BigIntegerField(null=False)
-    camera_id = models.BigIntegerField(null=False)
+    # 修改：使用ForeignKey
+    person = models.ForeignKey(Subject, on_delete=models.CASCADE, db_column='person_id')
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
     time = models.DateTimeField(auto_now_add=False, null=False)
     confidence = models.FloatField(null=False)
     image_path = models.CharField(max_length=255, null=False)
@@ -63,12 +97,13 @@ class RecognitionLog(models.Model):
         verbose_name_plural = '识别日志'
 
     def __str__(self):
-        return f"{self.person_id} @ {self.time}"
+        return f"{self.person.name} @ {self.time}"
 
 
 class DetectionLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    camera_id = models.BigIntegerField(null=False)
+    # 修改：使用ForeignKey
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
     object_class = models.CharField(max_length=32, null=False)
     confidence = models.FloatField(null=False)
     bbox = models.TextField(null=False)
@@ -86,7 +121,8 @@ class DetectionLog(models.Model):
 
 class WarningZone(models.Model):
     id = models.BigAutoField(primary_key=True)
-    camera_id = models.BigIntegerField(null=False)
+    # 修改：使用ForeignKey
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
     name = models.CharField(max_length=64, null=False)
     zone_type = models.PositiveSmallIntegerField(null=False)
     zone_points = models.TextField(null=False)
@@ -117,8 +153,9 @@ class IncidentType(models.Model):
 
 class IncidentDetectionLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    incident_type_id = models.BigIntegerField(null=False)
-    camera_id = models.BigIntegerField(null=False)
+    # 修改：使用ForeignKey
+    incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE, db_column='incident_type_id')
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
     time = models.DateTimeField(null=False)
     video_clip_path = models.CharField(max_length=255, null=False)
     confidence = models.FloatField(null=False)
@@ -130,28 +167,12 @@ class IncidentDetectionLog(models.Model):
         verbose_name_plural = '危险行为检测日志'
 
     def __str__(self):
-        return f"{self.incident_type_id} @ {self.time}"
-
-
-class Camera(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=64, null=False)
-    location = models.CharField(max_length=128, null=False)
-    stream_url = models.CharField(max_length=255, null=False)
-    camera_type = models.CharField(max_length=32, null=False)
-    is_active = models.BooleanField(null=False)
-
-    class Meta:
-        db_table = 'cameras'
-        verbose_name = '摄像头信息'
-        verbose_name_plural = '摄像头信息'
-
-    def __str__(self):
-        return self.name
+        return f"{self.incident_type.name} @ {self.time}"
 
 
 class AlarmLog(models.Model):
     id = models.BigAutoField(primary_key=True)
+    # 注意：这里的source_id可能指向不同的表，是一个通用外键场景，暂时保留
     source_type = models.CharField(max_length=32, null=False)
     source_id = models.BigIntegerField(null=False)
     time = models.DateTimeField(null=False)
@@ -168,5 +189,18 @@ class AlarmLog(models.Model):
         return f"{self.source_type} @ {self.time}"
 
 
+# TestNumber 模型 
+class TestNumber(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    number = models.IntegerField(default=0)
 
+#  Feedback 模型 
+class Feedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedbacks')
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self): 
+        return f"'{self.title}' by {self.user.username}" 
 
