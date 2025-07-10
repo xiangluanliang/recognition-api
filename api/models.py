@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -5,7 +6,7 @@ from django.contrib.auth.models import AbstractUser
 class Role(models.Model):
     id = models.IntegerField(primary_key=True)
     role_name = models.CharField(null=False)
-
+    
     class Meta:
         db_table = 'role'
         verbose_name = '角色'
@@ -13,10 +14,8 @@ class Role(models.Model):
 
 
 class User(AbstractUser):
-    # AbstractUser已包含id字段，此处可省略或保留
     id = models.BigAutoField(primary_key=True)
-    # 注意：如果存在Role模型，这里应该是一个ForeignKey
-    role_id = models.ForeignKey(Role,on_delete=models.CASCADE(), db_column='role_id')
+    role_id = models.ForeignKey(Role, on_delete=models.CASCADE(), db_column='role_id')
     status = models.PositiveSmallIntegerField(null=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
 
@@ -31,7 +30,6 @@ class User(AbstractUser):
 
 class OperationLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    # 修改：使用ForeignKey关联到User模型
     user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
     action = models.CharField(max_length=64, null=False)
     ip = models.CharField(max_length=45, null=False)
@@ -50,8 +48,9 @@ class OperationLog(models.Model):
 class Subject(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=64, null=False)
+    state = models.IntegerField(null=False)
     face_image_path = models.CharField(max_length=255, null=False)
-    face_embedding = models.TextField(null=False)
+    face_embedding = models.JSONField(null=True)
 
     class Meta:
         db_table = 'person'
@@ -65,9 +64,8 @@ class Subject(models.Model):
 class Camera(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=64, null=False)
-    location = models.CharField(max_length=128, null=False)
-    stream_url = models.CharField(max_length=255, null=False)
-    camera_type = models.CharField(max_length=32, null=False)
+    location = models.CharField(max_length=128, null=True)
+    camera_type = models.CharField(max_length=32, null=True)
     is_active = models.BooleanField(null=False)
 
     class Meta:
@@ -79,50 +77,46 @@ class Camera(models.Model):
         return self.name
 
 
-class RecognitionLog(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    # 修改：使用ForeignKey
-    person = models.ForeignKey(Subject, on_delete=models.CASCADE, db_column='person_id')
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
-    time = models.DateTimeField(auto_now_add=False, null=False)
-    confidence = models.FloatField(null=False)
-    image_path = models.CharField(max_length=255, null=False)
+class EventLog(models.Model):
+    EVENT_TYPE_CHOICES = [
+        ('face_match', '识别危险人员'),
+        ('person_fall', '人员跌倒'),
+        ('fire', '火灾'),
+        ('intrusion', '区域入侵'),
+        ('conflict', '打架冲突'),
+    ]
+
+    event_type = models.CharField(max_length=32, choices=EVENT_TYPE_CHOICES)
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, null=True)
+    time = models.DateTimeField()
+    confidence = models.FloatField()
+
+    image_path = models.CharField(max_length=255, null=True, blank=True)  # 报警时截图
+    video_clip_path = models.CharField(max_length=255, null=True, blank=True)  # 报警时视频片段
+
+    person = models.ForeignKey(Subject, null=True, blank=True, on_delete=models.SET_NULL)
+    # 仅人脸识别类型填写 person（关联黑名单人员）
+
+    STATUS_CHOICES = [
+        (0, '未处理'),
+        (1, '处理中'),
+        (2, '已处理'),
+    ]
+    status = models.PositiveSmallIntegerField(default=0, choices=STATUS_CHOICES)
+
+    description = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = 'recognition_log'
-        verbose_name = '识别日志'
-        verbose_name_plural = '识别日志'
-
-    def __str__(self):
-        return f"{self.person.name} @ {self.time}"
-
-
-class DetectionLog(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    # 修改：使用ForeignKey
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
-    object_class = models.CharField(max_length=32, null=False)
-    confidence = models.FloatField(null=False)
-    bbox = models.TextField(null=False)
-    time = models.DateTimeField(auto_now_add=False, null=False)
-    image_path = models.CharField(max_length=255, null=False)
-
-    class Meta:
-        db_table = 'detection_logs'
-        verbose_name = '目标检测日志'
-        verbose_name_plural = '目标检测日志'
-
-    def __str__(self):
-        return f"{self.object_class} @ {self.time}"
+        db_table = 'event_logs'
 
 
 class WarningZone(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 修改：使用ForeignKey
     camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
-    name = models.CharField(max_length=64, null=False)
+    name = models.CharField(max_length=64, null=True)
     zone_type = models.PositiveSmallIntegerField(null=False)
-    zone_points = models.TextField(null=False)
+    zone_points = models.JSONField(null=False)
     is_active = models.BooleanField(null=False)
 
     class Meta:
@@ -134,44 +128,11 @@ class WarningZone(models.Model):
         return self.name
 
 
-class IncidentType(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=64, null=False)
-    code = models.CharField(max_length=32, null=False)
-
-    class Meta:
-        db_table = 'incident_types'
-        verbose_name = '危险行为类型'
-        verbose_name_plural = '危险行为类型'
-
-    def __str__(self):
-        return self.name
-
-
-class IncidentDetectionLog(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    # 修改：使用ForeignKey
-    incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE, db_column='incident_type_id')
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
-    time = models.DateTimeField(null=False)
-    video_clip_path = models.CharField(max_length=255, null=False)
-    confidence = models.FloatField(null=False)
-    status = models.PositiveSmallIntegerField(null=False)
-
-    class Meta:
-        db_table = 'incident_detection_logs'
-        verbose_name = '危险行为检测日志'
-        verbose_name_plural = '危险行为检测日志'
-
-    def __str__(self):
-        return f"{self.incident_type.name} @ {self.time}"
-
-
 class AlarmLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 注意：这里的source_id可能指向不同的表，是一个通用外键场景，暂时保留
-    source_type = models.CharField(max_length=32, null=False)
-    source_id = models.BigIntegerField(null=False)
+    event = models.ForeignKey(EventLog, on_delete=models.CASCADE, db_column='event_id')
+
     time = models.DateTimeField(null=False)
     method = models.CharField(max_length=32, null=False)
     receiver = models.CharField(max_length=64, null=False)

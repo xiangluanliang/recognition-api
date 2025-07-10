@@ -6,14 +6,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import (
-    User, OperationLog, Subject, RecognitionLog, DetectionLog,
-    WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog
 )
 from ..serializers import (
-    UserSerializer, OperationLogSerializer, SubjectSerializer, RecognitionLogSerializer,
-    DetectionLogSerializer, WarningZoneSerializer, IncidentTypeSerializer,
-    IncidentDetectionLogSerializer, CameraSerializer, AlarmLogSerializer,
-    RegisterSerializer
+    UserSerializer, OperationLogSerializer, SubjectSerializer, WarningZoneSerializer, CameraSerializer,
+    AlarmLogSerializer, RegisterSerializer
 )
 
 
@@ -71,38 +68,14 @@ class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
     permission_classes = [IsAuthenticated]
 
-
-class RecognitionLogViewSet(viewsets.ModelViewSet):
-    queryset = RecognitionLog.objects.all().order_by('-time')
-    serializer_class = RecognitionLogSerializer
-    permission_classes = [IsAuthenticated]
-
     def create(self, request, *args, **kwargs):
         print("【调试】当前用户是：", request.user)
         return super().create(request, *args, **kwargs)
 
 
-class DetectionLogViewSet(viewsets.ModelViewSet):
-    queryset = DetectionLog.objects.all().order_by('-time')
-    serializer_class = DetectionLogSerializer
-    permission_classes = [IsAuthenticated]
-
-
 class WarningZoneViewSet(viewsets.ModelViewSet):
     queryset = WarningZone.objects.all()
     serializer_class = WarningZoneSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class IncidentTypeViewSet(viewsets.ModelViewSet):
-    queryset = IncidentType.objects.all()
-    serializer_class = IncidentTypeSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class IncidentDetectionLogViewSet(viewsets.ModelViewSet):
-    queryset = IncidentDetectionLog.objects.all().order_by('-time')
-    serializer_class = IncidentDetectionLogSerializer
     permission_classes = [IsAuthenticated]
 
 
@@ -116,6 +89,7 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
     queryset = AlarmLog.objects.all().order_by('-time')
     serializer_class = AlarmLogSerializer
     permission_classes = [IsAuthenticated]
+
 
 class RegisterView(APIView):
     permission_classes = []  # 注册接口允许匿名访问

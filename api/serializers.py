@@ -3,8 +3,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 import os
 from .models import (
-    User, OperationLog, Subject, RecognitionLog, DetectionLog,
-    WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog
 )
 
 class UserSerializer(serializers.ModelSerializer):
@@ -148,12 +147,20 @@ class CameraSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'location', 'stream_url', 'camera_type', 'is_active']
         read_only_fields = ['id']
 
+    def create(self, validated_data):
+        camera = Camera.objects.create(**validated_data)
+        if not camera.name:
+            camera.name = f"摄像头{camera.id}"
+            camera.save()
+        return camera
+
 
 class AlarmLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlarmLog
         fields = ['id', 'source_type', 'source_id', 'time', 'method', 'receiver', 'result']
         read_only_fields = ['id']
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
