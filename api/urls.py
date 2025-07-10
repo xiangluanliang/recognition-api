@@ -17,6 +17,10 @@ from .views.data_views import (
     UserViewSet, RegisterView,
 )
 
+from .views.video_views import (
+    VideoUploadAndProcessView, TaskResultView
+)
+
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'operation_logs', OperationLogViewSet)
@@ -32,6 +36,7 @@ router.register(r'alarm_logs', AlarmLogViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('register/', RegisterView.as_view(), name='register'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
+    path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
+    path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
+] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -4,14 +4,14 @@ from django.contrib.auth import get_user_model
 import os
 from .models import (
     User, OperationLog, Subject, RecognitionLog, DetectionLog,
-    WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
+    WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog, VideoAnalysisTask
 )
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        # 修改：将 role_id 改为 role (如果未来是外键的话)，或者保持原样
-        fields = ['id', 'username', 'role_id', 'status', 'created_at']
+        # 修改：将 role_id 改为 role (如果未来是外键的话)，或者保持原样  'role',
+        fields = ['id', 'username', 'status', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
@@ -175,3 +175,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+class VideoAnalysisTaskSerializer(serializers.ModelSerializer):
+    # 让前端能看到可读的状态名，而不是数字
+    status = serializers.CharField(source='get_status_display', read_only=True)
+    # 让前端能看到关联的用户名
+    user = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = VideoAnalysisTask
+        fields = ['id', 'user', 'original_video', 'status', 'analysis_result', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'analysis_result', 'created_at', 'updated_at', 'user']

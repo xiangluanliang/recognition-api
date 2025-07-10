@@ -31,7 +31,7 @@ class User(AbstractUser):
 class OperationLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 修改：使用ForeignKey关联到User模型
-    user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id',null=True, blank=True)
     action = models.CharField(max_length=64, null=False)
     ip = models.CharField(max_length=45, null=False)
     timestamp = models.DateTimeField(auto_now_add=True, null=False)
@@ -81,8 +81,8 @@ class Camera(models.Model):
 class RecognitionLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 修改：使用ForeignKey
-    person = models.ForeignKey(Subject, on_delete=models.CASCADE, db_column='person_id')
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
+    person = models.ForeignKey(Subject, on_delete=models.CASCADE, db_column='person_id',null=True, blank=True)
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id',null=True, blank=True)
     time = models.DateTimeField(auto_now_add=False, null=False)
     confidence = models.FloatField(null=False)
     image_path = models.CharField(max_length=255, null=False)
@@ -98,8 +98,7 @@ class RecognitionLog(models.Model):
 
 class DetectionLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    # 修改：使用ForeignKey
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id', null=True, blank=True)
     object_class = models.CharField(max_length=32, null=False)
     confidence = models.FloatField(null=False)
     bbox = models.TextField(null=False)
@@ -118,7 +117,7 @@ class DetectionLog(models.Model):
 class WarningZone(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 修改：使用ForeignKey
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id',null=True, blank=True)
     name = models.CharField(max_length=64, null=False)
     zone_type = models.PositiveSmallIntegerField(null=False)
     zone_points = models.TextField(null=False)
@@ -150,8 +149,8 @@ class IncidentType(models.Model):
 class IncidentDetectionLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 修改：使用ForeignKey
-    incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE, db_column='incident_type_id')
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
+    incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE, db_column='incident_type_id', null=True, blank=True)
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id', null=True, blank=True)
     time = models.DateTimeField(null=False)
     video_clip_path = models.CharField(max_length=255, null=False)
     confidence = models.FloatField(null=False)
@@ -183,3 +182,44 @@ class AlarmLog(models.Model):
 
     def __str__(self):
         return f"{self.source_type} @ {self.time}"
+
+class VideoAnalysisTask(models.Model):
+    """
+    专门用于跟踪用户上传视频并进行AI分析的任务。
+    """
+    # 任务状态的选项
+    STATUS_CHOICES = [
+        (0, '等待处理'),
+        (1, '正在处理'),
+        (2, '处理成功'),
+        (-1, '处理失败'),
+    ]
+
+    id = models.BigAutoField(primary_key=True)
+
+    # 关联到上传视频的用户
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, db_column='user_id')
+
+    # 上传的原始视频文件路径
+    original_video = models.FileField(upload_to='uploaded_videos/')
+
+    # 处理后、画上了框的视频文件路径
+    processed_video = models.FileField(upload_to='processed_videos/', null=True, blank=True)
+
+    # 任务的状态
+    status = models.SmallIntegerField(choices=STATUS_CHOICES, default=0)
+
+    # 存储AI分析的原始结果（JSON格式）
+    analysis_result = models.JSONField(null=True, blank=True)
+
+    # 任务创建和更新的时间
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'video_analysis_tasks'
+        verbose_name = '视频分析任务'
+        verbose_name_plural = '视频分析任务'
+
+    def __str__(self):
+        return f"任务 {self.id} - 状态: {self.get_status_display()}"
