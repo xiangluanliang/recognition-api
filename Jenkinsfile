@@ -21,7 +21,7 @@ pipeline {
         stage('Deploy Code') {
             steps {
                 echo "正在将 ${env.BRANCH_NAME} 分支的代码同步到 ${env.DEPLOY_DIR}..."
-                sh "rsync -av --delete --exclude='.git/' --exclude='venv/' --exclude='__pycache__/' ${WORKSPACE}/ ${env.DEPLOY_DIR}/"
+                sh "rsync -av --delete --exclude='.git/' --exclude='venv/' --exclude='__pycache__/' --exclude='.env' ${WORKSPACE}/ ${env.DEPLOY_DIR}/"
             }
         }
         
