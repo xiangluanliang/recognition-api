@@ -2,6 +2,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import permissions, viewsets, status
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -91,6 +92,36 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
     queryset = AlarmLog.objects.all().order_by('-time')
     serializer_class = AlarmLogSerializer
     permission_classes = [IsAuthenticated]
+
+    @action(detail=True, methods=['patch'], url_path='update_event_status')
+    def update_event_status(self, request, pk=None):
+        alarm = self.get_object()
+        event = alarm.event
+
+        new_status = request.data.get('status')
+        description = request.data.get('description', '')
+
+        if new_status not in [0, 1, 2]:
+            return Response({'detail': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+
+        event.status = new_status
+        event.description = description
+        event.save()
+
+        return Response({'detail': '事件状态更新成功'})
+
+    @action(detail=True, methods=['get'], url_path='event_detail')
+    def event_detail(self, request, pk=None):
+        alarm = self.get_object()
+        event = alarm.event
+        return Response({
+            'event_type': event.event_type,
+            'event_time': event.time,
+            'status': event.status,
+            'description': event.description,
+            'video_clip_path': event.video_clip_path,
+            'image_path': event.image_path,
+        })
 
 
 class RegisterView(APIView):
