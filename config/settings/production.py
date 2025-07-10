@@ -9,3 +9,7 @@ DEBUG = False
 # 允许服务器公网IP和域名访问
 # 建议也从环境变量读取，但为简化，先写死
 ALLOWED_HOSTS = ['8.152.101.217']
+
+
+STATIC_URL = '/static/master/'
+MEDIA_URL = '/media/master/'

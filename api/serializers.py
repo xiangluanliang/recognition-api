@@ -1,11 +1,10 @@
-from rest_framework import serializers
 from django.conf import settings
 from django.contrib.auth import get_user_model
 import os
+from rest_framework import serializers
 from .models import (
-    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, VideoAnalysisTask, Feedback
 )
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -105,7 +104,7 @@ class CameraSerializer(serializers.ModelSerializer):
 class AlarmLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlarmLog
-        fields = ['id', 'source_type', 'source_id', 'time', 'method', 'receiver', 'result']
+        fields = ['id', 'time',  'result']
         read_only_fields = ['id']
 
 
@@ -151,3 +150,23 @@ class EventLogSerializer(serializers.ModelSerializer):
             'status_display',
             'description',
         ]
+class VideoAnalysisTaskSerializer(serializers.ModelSerializer):
+    # 让前端能看到可读的状态名，而不是数字
+    status = serializers.CharField(source='get_status_display', read_only=True)
+    # 让前端能看到关联的用户名
+    user = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = VideoAnalysisTask
+        fields = ['id', 'user', 'original_video', 'status', 'analysis_result', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'analysis_result', 'created_at', 'updated_at', 'user']
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    # 让返回的JSON中包含用户名，而不仅仅是用户ID
+    user = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Feedback
+        # 定义API应该暴露哪些字段
+        fields = ['id', 'user', 'title', 'content', 'created_at']
+        # 将user字段设为只读，因为我们会根据当前登录用户自动设置
+        read_only_fields = ['user', 'created_at']

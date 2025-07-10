@@ -1,3 +1,4 @@
+
 # api/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -16,6 +17,13 @@ from .views.data_views import (
     LoginView
 )
 
+from .views.video_views import (
+    TaskResultView,
+    VideoUploadAndProcessView
+)
+
+from .views.feedback_views import FeedbackView
+
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'operation_logs', OperationLogViewSet)
@@ -29,6 +37,8 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('', include(router.urls)),
     path('register/', RegisterView.as_view(), name='register'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
+    path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
+    path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
+    path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
+] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

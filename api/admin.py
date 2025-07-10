@@ -1,5 +1,6 @@
 # api/admin.py
 from django.contrib import admin
+
 from .models import (
     User,
     OperationLog,
@@ -8,6 +9,8 @@ from .models import (
     EventLog,
     Camera,
     AlarmLog,
+    Feedback,
+    VideoAnalysisTask
 )
 
 admin.site.register(User)
@@ -18,3 +21,5 @@ admin.site.register(EventLog)
 admin.site.register(Camera)
 admin.site.register(AlarmLog)
 
+admin.site.register(Feedback)
+admin.site.register(VideoAnalysisTask)
