@@ -95,20 +95,11 @@ class EventLog(models.Model):
     time = models.DateTimeField()
     confidence = models.FloatField()
 
-    image_path = models.CharField(max_length=255, null=True, blank=True)  # 报警时截图
-    video_clip_path = models.CharField(max_length=255, null=True, blank=True)  # 报警时视频片段
+    image_path = models.CharField(max_length=255, null=True, blank=True)
+    video_clip_path = models.CharField(max_length=255, null=True, blank=True)
 
     person = models.ForeignKey(Subject, null=True, blank=True, on_delete=models.SET_NULL)
     # 仅人脸识别类型填写 person（关联黑名单人员）
-
-    STATUS_CHOICES = [
-        (0, '未处理'),
-        (1, '处理中'),
-        (2, '已处理'),
-    ]
-    status = models.PositiveSmallIntegerField(default=0, choices=STATUS_CHOICES)
-
-    description = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = 'event_logs'
@@ -134,13 +125,20 @@ class WarningZone(models.Model):
 
 class AlarmLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    # 注意：这里的source_id可能指向不同的表，是一个通用外键场景，暂时保留
+    title = models.CharField()
     event = models.ForeignKey(EventLog, on_delete=models.CASCADE, db_column='event_id', default="")
 
     time = models.DateTimeField(null=False)
-    method = models.CharField(max_length=32, null=False)
-    receiver = models.CharField(max_length=64, null=False)
     result = models.CharField(max_length=64, null=True, blank=True)
+
+    STATUS_CHOICES = [
+        (0, '未处理'),
+        (1, '处理中'),
+        (2, '已处理'),
+    ]
+    status = models.PositiveSmallIntegerField(default=0, choices=STATUS_CHOICES)
+
+    description = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = 'alarm_logs'
