@@ -6,11 +6,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import (
-    User, OperationLog, Subject, WarningZone, Camera, AlarmLog
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog
 )
 from ..serializers import (
     UserSerializer, OperationLogSerializer, SubjectSerializer, WarningZoneSerializer, CameraSerializer,
-    AlarmLogSerializer, RegisterSerializer
+    AlarmLogSerializer, RegisterSerializer, EventLogSerializer
 )
 
 
@@ -100,3 +100,15 @@ class RegisterView(APIView):
             serializer.save()
             return Response({"message": "注册成功！"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EventLogViewSet(viewsets.ModelViewSet):
+    queryset = EventLog.objects.all().order_by('-time')  # 最新的排前面
+    serializer_class = EventLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    # 可选：你可以添加 create 或 perform_create 钩子来添加日志、自动报警等
+    def perform_create(self, serializer):
+        event = serializer.save()
+        print(f"记录新事件：{event.event_type}，来自摄像头：{event.camera_id}")
+        # 如果需要，还可以在这里触发自动报警（比如写入 AlarmLog）

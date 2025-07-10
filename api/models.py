@@ -5,6 +5,8 @@ from django.contrib.auth.models import AbstractUser
 
 class Role(models.Model):
     id = models.IntegerField(primary_key=True)
+    # 普通用户-1
+    # 管理员-2
     role_name = models.CharField(null=False)
     
     class Meta:
@@ -15,7 +17,7 @@ class Role(models.Model):
 
 class User(AbstractUser):
     id = models.BigAutoField(primary_key=True)
-    role_id = models.ForeignKey(Role, on_delete=models.CASCADE(), db_column='role_id')
+    role_id = models.ForeignKey(Role, on_delete=models.CASCADE, db_column='role_id')
     status = models.PositiveSmallIntegerField(null=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
 
@@ -30,7 +32,7 @@ class User(AbstractUser):
 
 class OperationLog(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id', null=True)
     action = models.CharField(max_length=64, null=False)
     ip = models.CharField(max_length=45, null=False)
     timestamp = models.DateTimeField(auto_now_add=True, null=False)
@@ -48,7 +50,7 @@ class OperationLog(models.Model):
 class Subject(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=64, null=False)
-    state = models.IntegerField(null=False)
+    state = models.IntegerField(null=False, default=1)
     face_image_path = models.CharField(max_length=255, null=False)
     face_embedding = models.JSONField(null=True)
 
@@ -113,7 +115,7 @@ class EventLog(models.Model):
 class WarningZone(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 修改：使用ForeignKey
-    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id')
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, db_column='camera_id', null=True)
     name = models.CharField(max_length=64, null=True)
     zone_type = models.PositiveSmallIntegerField(null=False)
     zone_points = models.JSONField(null=False)
@@ -131,7 +133,7 @@ class WarningZone(models.Model):
 class AlarmLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 注意：这里的source_id可能指向不同的表，是一个通用外键场景，暂时保留
-    event = models.ForeignKey(EventLog, on_delete=models.CASCADE, db_column='event_id')
+    event = models.ForeignKey(EventLog, on_delete=models.CASCADE, db_column='event_id', default="")
 
     time = models.DateTimeField(null=False)
     method = models.CharField(max_length=32, null=False)
