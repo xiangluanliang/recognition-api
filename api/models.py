@@ -135,6 +135,7 @@ class WarningZone(models.Model):
 class AlarmLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 注意：这里的source_id可能指向不同的表，是一个通用外键场景，暂时保留
+    title = models.CharField(null=True, blank=True)
     event = models.ForeignKey(EventLog, on_delete=models.CASCADE, db_column='event_id', default="")
 
     time = models.DateTimeField(null=False)
