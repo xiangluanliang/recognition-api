@@ -1,19 +1,18 @@
 # api/views/data_views.py
+from django.contrib.auth import authenticate
 from rest_framework import permissions, viewsets, status
+from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import (
-    User, OperationLog, Subject, RecognitionLog, DetectionLog,
-    WarningZone, IncidentType, IncidentDetectionLog, Camera, AlarmLog
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog
 )
 from ..serializers import (
-    UserSerializer, OperationLogSerializer, SubjectSerializer, RecognitionLogSerializer,
-    DetectionLogSerializer, WarningZoneSerializer, IncidentTypeSerializer,
-    IncidentDetectionLogSerializer, CameraSerializer, AlarmLogSerializer,
-    RegisterSerializer
+    UserSerializer, OperationLogSerializer, SubjectSerializer, WarningZoneSerializer, CameraSerializer,
+    AlarmLogSerializer, RegisterSerializer, EventLogSerializer
 )
 
 
@@ -71,38 +70,14 @@ class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
     permission_classes = [IsAuthenticated]
 
-
-class RecognitionLogViewSet(viewsets.ModelViewSet):
-    queryset = RecognitionLog.objects.all().order_by('-time')
-    serializer_class = RecognitionLogSerializer
-    permission_classes = [IsAuthenticated]
-
     def create(self, request, *args, **kwargs):
         print("【调试】当前用户是：", request.user)
         return super().create(request, *args, **kwargs)
 
 
-class DetectionLogViewSet(viewsets.ModelViewSet):
-    queryset = DetectionLog.objects.all().order_by('-time')
-    serializer_class = DetectionLogSerializer
-    permission_classes = [IsAuthenticated]
-
-
 class WarningZoneViewSet(viewsets.ModelViewSet):
     queryset = WarningZone.objects.all()
     serializer_class = WarningZoneSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class IncidentTypeViewSet(viewsets.ModelViewSet):
-    queryset = IncidentType.objects.all()
-    serializer_class = IncidentTypeSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class IncidentDetectionLogViewSet(viewsets.ModelViewSet):
-    queryset = IncidentDetectionLog.objects.all().order_by('-time')
-    serializer_class = IncidentDetectionLogSerializer
     permission_classes = [IsAuthenticated]
 
 
@@ -117,12 +92,55 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
     serializer_class = AlarmLogSerializer
     permission_classes = [IsAuthenticated]
 
+
 class RegisterView(APIView):
     permission_classes = []  # 注册接口允许匿名访问
-
     def post(self, request):
+        print(request.data)
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "注册成功！"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginView(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'message': '用户名和密码不能为空'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'message': '用户不存在，请先注册'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user = authenticate(username=username, password=password)
+        if user:
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({
+                'token': token.key,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'status': user.status,
+                    'created_at': user.created_at
+                }
+            })
+        else:
+            return Response({'message': '密码错误'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class EventLogViewSet(viewsets.ModelViewSet):
+    queryset = EventLog.objects.all().order_by('-time')
+    serializer_class = EventLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        event = serializer.save()
+        print(f"记录新事件：{event.event_type}，来自摄像头：{event.camera_id}")

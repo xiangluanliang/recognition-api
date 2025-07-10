@@ -7,8 +7,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 import requests
-from ..models import IncidentDetectionLog, VideoAnalysisTask
-from ..serializers import VideoAnalysisTaskSerializer
 from ..services.postService.send_yolo import my_yolo
 
 

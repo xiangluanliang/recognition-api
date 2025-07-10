@@ -7,5 +7,6 @@ venv/
 .env.*
 .env
 .idea/
+script/received_videos/
 media/
 dnn_models/
