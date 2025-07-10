@@ -11,7 +11,9 @@ import requests
 from ..models import VideoAnalysisTask
 from ..serializers import VideoAnalysisTaskSerializer
 from ..services.postService.send_yolo import my_yolo
+import logging
 
+logger = logging.getLogger(__name__)
 
 # # 这是一个临时的后台任务函数，未来可以用Celery替代
 # # 它负责与本地AI服务通信
@@ -63,39 +65,48 @@ class VideoUploadAndProcessView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, *args, **kwargs):
-        # 确保用户已登录
+        logger.info("开始处理视频上传请求...") # 日志1
         if not request.user.is_authenticated:
+            logger.warning("用户未认证，请求被拒绝。")
             return Response({"error": "请先登录"}, status=status.HTTP_401_UNAUTHORIZED)
 
         video_file = request.FILES.get('video')
         if not video_file:
+            logger.error("请求中未找到名为 'video' 的文件。")
             return Response({"error": "请求中未找到名为 'video' 的文件"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # 使用Django的FileField来自动处理文件保存
-            task = VideoAnalysisTask.objects.create(
+            logger.info("步骤1：文件已接收，准备在内存中创建VideoAnalysisTask对象。") # 日志2
+            # 先只在内存里创建对象，不访问数据库
+            task = VideoAnalysisTask(
                 user=request.user,
-                original_video=video_file,
-                status=0  # 初始状态：等待处理
+                original_video=video_file, # 这一步会将文件赋给模型字段
+                status=0
             )
-            print(f"已创建新的视频分析任务，ID为: {task.id}")
+            
+            logger.info("步骤2：对象已在内存中创建，准备将模型保存到数据库（这将触发文件保存到磁盘）。") # 日志3
+            # 这一行会同时执行两件事：
+            # 1. 将 video_file 的内容写入到服务器的 'uploaded_videos/' 目录
+            # 2. 将 task 对象的数据 INSERT 到数据库的 'video_analysis_tasks' 表
+            task.save()
+            
+            logger.info(f"步骤3：task.save() 执行成功！已创建新的任务，ID为: {task.id}") # 日志4
+
         except Exception as e:
+            logger.error(f"创建任务记录时捕获到异常: {e}", exc_info=True) # exc_info=True会记录完整的Traceback
             return Response({"error": f"创建任务记录失败: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # 构造视频的公网可访问URL，供AI Worker下载
+        # ... 后续代码不变 ...
         public_video_url = request.build_absolute_uri(task.original_video.url)
 
-        # 2. 【关键】在这里调用你的my_yolo函数！
-        # 我们使用多线程在后台调用，避免API请求超时
-        print(f"准备启动后台线程来调用my_yolo处理任务 {task.id}...")
+        logger.info(f"准备为任务 {task.id} 启动后台处理线程...") # 日志5
         thread = threading.Thread(
             target=my_yolo,
             args=(task.id, public_video_url)
         )
         thread.start()
 
-        # 3. 立刻返回响应给前端
-        print("已将任务交由后台处理，立刻返回响应给前端。")
+        logger.info("后台线程已启动，准备返回202响应。") # 日志6
         serializer = VideoAnalysisTaskSerializer(task)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
