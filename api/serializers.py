@@ -10,8 +10,7 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        # 修改：将 role_id 改为 role (如果未来是外键的话)，或者保持原样
-        fields = ['id', 'username', 'role_id', 'status', 'created_at']
+        fields = ['id', 'username', 'email',  'status', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
