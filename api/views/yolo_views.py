@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
-from api.services.yolo_service import process_video
+from api.services.yoloService.yolo_service import process_video
 import base64
 import cv2
 
