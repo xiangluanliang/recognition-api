@@ -3,3 +3,5 @@
 # @Author : Lxl
 # @File ： __init__.py
 # @ProjectName : recognition-api
+
+from .base import *

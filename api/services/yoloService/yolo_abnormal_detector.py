@@ -1,18 +1,14 @@
+import logging
 import cv2
 import numpy as np
 from ultralytics import YOLO
 from collections import defaultdict, deque
-import logging
-from PIL import ImageFont, ImageDraw, Image
-import django
-import sys
-import os
+import datetime
 
-# 设置 Django 环境
-sys.path.append('D:/project/recognition-api')  # <<< 修改为你项目根目录路径
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')  # <<< 替换为你的 Django 项目设置
-django.setup()
+# 导入模型
+from api.models import EventLog, Camera
 
+# 设置模型和常量
 logging.getLogger('ultralytics').setLevel(logging.ERROR)
 pose_model = YOLO("yolov8l-pose.pt")
 
@@ -80,6 +76,7 @@ def detect_abnormal_behavior(video_path, output_path):
     frame_idx = 0
     abnormal_count = 0
     prev_centers = {}
+    saved_events = []
 
     while True:
         ret, frame = cap.read()
@@ -119,7 +116,6 @@ def detect_abnormal_behavior(video_path, output_path):
                 'frame': frame_idx
             })
 
-            # --- 趋势判断 ---
             trend_fall = False
             if len(person_history[pid]) >= 3:
                 a1 = person_history[pid][-2]['angle']
@@ -130,19 +126,37 @@ def detect_abnormal_behavior(video_path, output_path):
                 c2 = np.array(center)
                 move_dist = np.linalg.norm(c2 - c1)
 
-                # 判断摔倒趋势（大幅度角度变化 + 位移快）
                 trend_fall = (angle_diff > 30 and move_dist > 50)
 
-            # --- 最终判断 ---
             is_fall = (angle < 85 and nose_y > knee_y - 20) or trend_fall
             label = "✅" if is_fall else "❌"
 
-            print(f"[帧{frame_idx}] 角度: {angle:.2f}°, 鼻Y: {nose_y:.1f}, 膝Y: {knee_y:.1f}, 摔倒趋势: {'是' if trend_fall else '否'} → 判定: {label}")
+            print(f"[帧{frame_idx}] 角度: {angle:.2f}°, 鼻Y: {nose_y:.1f}, 膝Y: {knee_y:.1f}, 趋势: {'是' if trend_fall else '否'} → 判定: {label}")
 
             if is_fall:
                 abnormal_count += 1
                 for offset in range(-fall_buffer, fall_buffer + 1):
                     fall_frames.add(frame_idx + offset)
+
+                # ✅ 记录摔倒事件（防止重复写入）
+                if pid not in [e['pid'] for e in saved_events]:
+                    event_time = datetime.datetime.now()
+
+                    # 可选：camera = Camera.objects.get(id=1) 未来接入摄像头时再写入
+                    camera_obj = None
+
+                    event = EventLog(
+                        event_type='person_fall',
+                        time=event_time,
+                        confidence=1.0,
+                        camera=camera_obj,
+                        video_clip_path=output_path,
+                        image_path=None,
+                        status=0,
+                        description=f"检测到人员 ID:{pid} 摔倒，角度:{angle:.1f}°，帧:{frame_idx}"
+                    )
+                    event.save()
+                    saved_events.append({'pid': pid, 'time': event_time})
 
             color = (0, 0, 255) if frame_idx in fall_frames else (0, 255, 0)
             draw_pose(frame, kpts, color=color)

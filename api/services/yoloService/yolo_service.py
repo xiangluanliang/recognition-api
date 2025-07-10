@@ -1,6 +1,13 @@
 # api/services/yoloService/yolo_service.py
-from flask import Flask, request, jsonify, send_from_directory
+import sys
 import os
+import django
+
+sys.path.append('D:/project/recognition-api')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+django.setup()
+
+from flask import Flask, request, jsonify, send_from_directory
 import datetime
 from yolo_detector import detect_humans_with_yolov8
 from yolo_abnormal_detector import detect_abnormal_behavior
