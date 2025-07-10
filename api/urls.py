@@ -16,9 +16,7 @@ from .views.data_views import (
     LoginView
 )
 
-from .views.video_views import (
-    VideoUploadAndProcessView, TaskResultView
-)
+
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -33,7 +31,6 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('', include(router.urls)),
     path('register/', RegisterView.as_view(), name='register'),
-    path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
-    path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
+
 ] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

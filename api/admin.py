@@ -8,7 +8,6 @@ from .models import (
     EventLog,
     Camera,
     AlarmLog,
-    VideoAnalysisTask
 )
 
 admin.site.register(User)
@@ -18,5 +17,5 @@ admin.site.register(WarningZone)
 admin.site.register(EventLog)
 admin.site.register(Camera)
 admin.site.register(AlarmLog)
-admin.site.register(VideoAnalysisTask)
+
 

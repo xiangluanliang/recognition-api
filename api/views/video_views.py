@@ -7,8 +7,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 import requests
-from ..models import IncidentDetectionLog, VideoAnalysisTask
-from ..serializers import VideoAnalysisTaskSerializer
 from ..services.postService.send_yolo import my_yolo
 
 
@@ -55,55 +53,3 @@ from ..services.postService.send_yolo import my_yolo
 #             print(f"无法找到任务ID {task_id} 来更新失败状态。")
 
 
-class VideoUploadAndProcessView(APIView):
-    """
-    接收视频上传，保存文件，创建任务记录，并触发后台AI处理。
-    """
-    parser_classes = (MultiPartParser, FormParser)
-
-    def post(self, request, *args, **kwargs):
-        # 确保用户已登录
-        if not request.user.is_authenticated:
-            return Response({"error": "请先登录"}, status=status.HTTP_401_UNAUTHORIZED)
-
-        video_file = request.FILES.get('video')
-        if not video_file:
-            return Response({"error": "请求中未找到名为 'video' 的文件"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            # 使用Django的FileField来自动处理文件保存
-            task = VideoAnalysisTask.objects.create(
-                user=request.user,
-                original_video=video_file,
-                status=0  # 初始状态：等待处理
-            )
-            print(f"已创建新的视频分析任务，ID为: {task.id}")
-        except Exception as e:
-            return Response({"error": f"创建任务记录失败: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # 构造视频的公网可访问URL，供AI Worker下载
-        public_video_url = request.build_absolute_uri(task.original_video.url)
-
-        # 2. 【关键】在这里调用你的my_yolo函数！
-        # 我们使用多线程在后台调用，避免API请求超时
-        print(f"准备启动后台线程来调用my_yolo处理任务 {task.id}...")
-        thread = threading.Thread(
-            target=my_yolo,
-            args=(task.id, public_video_url)
-        )
-        thread.start()
-
-        # 3. 立刻返回响应给前端
-        print("已将任务交由后台处理，立刻返回响应给前端。")
-        serializer = VideoAnalysisTaskSerializer(task)
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-
-class TaskResultView(RetrieveAPIView):
-    """
-    根据任务ID获取单个视频分析任务的详细信息和状态。
-    """
-    queryset = VideoAnalysisTask.objects.all()
-    serializer_class = VideoAnalysisTaskSerializer
-    # lookup_field 告诉视图用URL中的哪个参数来查找对象，这里我们用'pk'或'id'
-    # DRF默认就是'pk'，所以这行可以不写，但写上更清晰
-    lookup_field = 'pk'

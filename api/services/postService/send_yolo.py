@@ -4,7 +4,7 @@ import requests
 import os
 from django.core.files.base import ContentFile
 from django.db import connection
-from ...models import VideoAnalysisTask
+
 
 
 # 这是一个辅助函数，专门用于从AI Worker下载文件
