@@ -105,7 +105,7 @@ class CameraSerializer(serializers.ModelSerializer):
 class AlarmLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlarmLog
-        fields = ['id', 'source_type', 'source_id', 'time', 'method', 'receiver', 'result']
+        fields = ['id', 'time',  'result']
         read_only_fields = ['id']
 
 
