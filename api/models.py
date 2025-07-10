@@ -15,7 +15,7 @@ class Role(models.Model):
 class User(AbstractUser):
     # AbstractUser已包含id字段，此处可省略或保留
     id = models.BigAutoField(primary_key=True)
-    # role_id = models.ForeignKey(Role,on_delete=models.CASCADE(), db_column='role_id')
+    role_id = models.ForeignKey(Role,on_delete=models.CASCADE, db_column='role_id',null=True,blank=True)
     status = models.PositiveSmallIntegerField(null=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
 
