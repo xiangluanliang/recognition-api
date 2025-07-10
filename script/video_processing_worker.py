@@ -14,6 +14,7 @@ import os
 import requests
 from flask import Flask, request, jsonify
 from tqdm import tqdm
+from tqdm import tqdm
 import datetime
 
 import cv2
