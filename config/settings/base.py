@@ -165,12 +165,12 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "DEBUG",  # 使用 DEBUG 级别以获取最详细的信息
+        "level": "INFO",  # 使用 DEBUG 级别以获取最详细的信息
     },
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": False,
         },
     },
