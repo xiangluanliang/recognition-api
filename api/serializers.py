@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 import os
 from rest_framework import serializers
 from .models import (
-    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, VideoAnalysisTask, Feedback, Role
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, VideoAnalysisTask, Feedback, Role, DailyReport
 )
 
 
@@ -188,3 +188,10 @@ class FeedbackSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'title', 'content', 'created_at']
         # 将user字段设为只读，因为我们会根据当前登录用户自动设置
         read_only_fields = ['user', 'created_at']
+
+
+class DailyReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyReport
+        fields = ['id', 'date', 'content']
+        read_only_fields = ['id', 'date', 'content']

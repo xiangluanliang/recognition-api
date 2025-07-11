@@ -14,7 +14,7 @@ from .views.data_views import (
     AlarmLogViewSet,
     UserViewSet,
     RegisterView,
-    LoginView,
+    LoginView, DailyReportViewSet,
 )
 
 from .views.video_views import (
@@ -32,6 +32,7 @@ router.register(r'warning_zones', WarningZoneViewSet)
 router.register(r'cameras', CameraViewSet)
 router.register(r'alarm_logs', AlarmLogViewSet)
 router.register(r'event_logs', EventLogViewSet)
+router.register('daily_report', DailyReportViewSet, basename='daily_report')
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),

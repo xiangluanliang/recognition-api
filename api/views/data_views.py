@@ -12,11 +12,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import (
-    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog
+    User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, DailyReport
 )
 from ..serializers import (
     UserSerializer, OperationLogSerializer, SubjectSerializer, WarningZoneSerializer, CameraSerializer,
-    AlarmLogSerializer, RegisterSerializer, EventLogSerializer
+    AlarmLogSerializer, RegisterSerializer, EventLogSerializer, DailyReportSerializer
 )
 
 
@@ -179,3 +179,21 @@ class EventLogViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         event = serializer.save()
         print(f"记录新事件：{event.event_type}，来自摄像头：{event.camera_id}")
+
+
+class DailyReportViewSet(viewsets.ViewSet):
+    @action(detail=False, methods=['get'], url_path='today')
+    def today(self, request):
+        today = now().date()
+        try:
+            report = DailyReport.objects.get(date=today)
+            serializer = DailyReportSerializer(report)
+            return Response({
+                'date': str(today),
+                'content': serializer.data['content'],
+            })
+        except DailyReport.DoesNotExist:
+            return Response({
+                'date': str(today),
+                'content': '今日暂无生成的 AI 日报。',
+            })
