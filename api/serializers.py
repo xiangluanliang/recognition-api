@@ -106,9 +106,8 @@ class AlarmLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AlarmLog
-        fields = ['id', 'title', 'time', 'result', 'status', 'description', 'event_id', 'event_type']
+        fields = ['id', 'title', 'time', 'result', 'status', 'description', 'event_id']
         read_only_fields = ['id']
-
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -154,18 +153,12 @@ class EventLogSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'event_type',
-            'event_type_display',
             'camera_id',
-            'camera_name',
             'time',
             'confidence',
             'image_path',
             'video_clip_path',
             'person_id',
-            'person_name',
-            'status',
-            'status_display',
-            'description',
         ]
 
 class VideoAnalysisTaskSerializer(serializers.ModelSerializer):
