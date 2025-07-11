@@ -6,10 +6,13 @@ from .models import (
     User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, VideoAnalysisTask, Feedback, Role
 )
 
+
 class UserSerializer(serializers.ModelSerializer):
+    role_name = serializers.CharField(source='role_id.name', read_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role_id','status', 'created_at']
+        fields = ['id', 'username', 'email', 'role_id', 'role_name', 'status', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 
@@ -135,8 +138,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class EventLogSerializer(serializers.ModelSerializer):
-    event_type_display = serializers.CharField(source='get_event_type_display', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    # event_type_display = serializers.CharField(source='get_event_type_display', read_only=True)
+    # status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     # 显示 camera_id 和 camera_name
     camera_id = serializers.PrimaryKeyRelatedField(source='camera', read_only=True)
@@ -152,12 +155,15 @@ class EventLogSerializer(serializers.ModelSerializer):
             'id',
             'event_type',
             'camera_id',
+            'camera_name',
             'time',
             'confidence',
             'image_path',
             'video_clip_path',
             'person_id',
+            'person_name',
         ]
+
 
 class VideoAnalysisTaskSerializer(serializers.ModelSerializer):
     # 让前端能看到可读的状态名，而不是数字
@@ -168,6 +174,7 @@ class VideoAnalysisTaskSerializer(serializers.ModelSerializer):
         model = VideoAnalysisTask
         fields = ['id', 'user', 'original_video', 'status', 'analysis_result', 'created_at', 'updated_at']
         read_only_fields = ['id', 'status', 'analysis_result', 'created_at', 'updated_at', 'user']
+
 
 class FeedbackSerializer(serializers.ModelSerializer):
     # 让返回的JSON中包含用户名，而不仅仅是用户ID
