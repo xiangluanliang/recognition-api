@@ -71,6 +71,8 @@ class Camera(models.Model):
     location = models.CharField(max_length=128, null=True)
     camera_type = models.CharField(max_length=32, null=True)
     is_active = models.BooleanField(null=False)
+    url = models.CharField(max_length=64, null=True)
+    password = models.CharField(max_length=64, null=True)
 
     class Meta:
         db_table = 'cameras'
