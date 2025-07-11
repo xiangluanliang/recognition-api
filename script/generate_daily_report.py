@@ -3,6 +3,7 @@ import os
 import django
 from datetime import datetime, timedelta
 import pandas as pd
+from django.db.models import Count
 
 # 设置 Django 环境
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
@@ -27,7 +28,7 @@ def generate_report():
     }
 
     # 各类型事件统计
-    type_counts = events.values('event_type').annotate(count=pd.Count('event_type'))
+    type_counts = events.values('event_type').annotate(count=Count('event_type'))
     for item in type_counts:
         summary[f"事件类型-{item['event_type']}"] = item['count']
 
@@ -42,7 +43,7 @@ def generate_report():
         '时间': e.time.strftime('%Y-%m-%d %H:%M:%S'),
         '类型': e.get_event_type_display(),
         '状态': e.get_status_display(),
-        '摄像头': str(e.camera),
+        '摄像头': str(e.camera) if e.camera else '无',
         '截图': e.image_path,
         '视频': e.video_clip_path,
     } for e in events]
