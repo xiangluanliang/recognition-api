@@ -15,6 +15,7 @@ from ..serializers import FeedbackSerializer
 # 如果有其他视图类需要，可以放在这里 ...
 
 class FeedbackView(APIView):
+
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -34,3 +35,4 @@ class FeedbackView(APIView):
             return Response({"code": 0, "info": serializer.data}, status=status.HTTP_201_CREATED)
         # 如果is_valid验证失败且没有raise_exception，则会执行下面这行
         # return Response({"code": 400, "message": "输入数据无效", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+

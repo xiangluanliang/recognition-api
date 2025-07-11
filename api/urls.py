@@ -35,8 +35,7 @@ router.register(r'cameras', CameraViewSet)
 router.register(r'alarm_logs', AlarmLogViewSet)
 router.register(r'event_logs', EventLogViewSet)
 router.register('daily_report', DailyReportViewSet, basename='daily_report')
-router.register(r'cameras', CameraViewSet)
-router.register(r'feedback', FeedbackView)
+# router.register(r'feedback', FeedbackView)
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
