@@ -167,7 +167,6 @@ class LoginView(APIView):
         else:
             return Response({'message': '密码错误'}, status=status.HTTP_401_UNAUTHORIZED)
 
-
 class EventLogViewSet(viewsets.ModelViewSet):
     queryset = EventLog.objects.all().order_by('-time')
     serializer_class = EventLogSerializer

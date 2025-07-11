@@ -141,22 +141,33 @@ class EventLogSerializer(serializers.ModelSerializer):
     event_type_display = serializers.CharField(source='get_event_type_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
+    # 显示 camera_id 和 camera_name
+    camera_id = serializers.PrimaryKeyRelatedField(source='camera', read_only=True)
+    camera_name = serializers.CharField(source='camera.name', read_only=True)
+
+    # 显示 person_id 和 person_name
+    person_id = serializers.PrimaryKeyRelatedField(source='person', read_only=True)
+    person_name = serializers.CharField(source='person.name', read_only=True)
+
     class Meta:
         model = EventLog
         fields = [
             'id',
             'event_type',
             'event_type_display',
-            'camera',
+            'camera_id',
+            'camera_name',
             'time',
             'confidence',
             'image_path',
             'video_clip_path',
-            'person',
+            'person_id',
+            'person_name',
             'status',
             'status_display',
             'description',
         ]
+
 class VideoAnalysisTaskSerializer(serializers.ModelSerializer):
     # 让前端能看到可读的状态名，而不是数字
     status = serializers.CharField(source='get_status_display', read_only=True)
