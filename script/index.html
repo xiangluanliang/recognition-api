@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人脸识别实时视频流</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            background-color: #f0f2f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 8px 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        img {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 80%; /* 确保图片在小屏幕上也能适应 */
+            height: auto;
+            background-color: #eee; /* 在加载前显示背景色 */
+            display: block; /* 移除图片底部空白 */
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>人脸识别实时视频监控</h1>
+
+    <div class="controls">
+        <label for="streamSelect">选择摄像头流:</label>
+        <select id="streamSelect">
+            <option value="1">摄像头 1</option>
+            <option value="2">摄像头 2</option>
+            <option value="3">摄像头 3</option>
+        </select>
+    </div>
+
+    <img id="videoFeed" src="" alt="实时视频流" onerror="this.onerror=null; this.src='placeholder.png'">
+    <p class="message">视频流状态: 正在尝试连接...</p>
+
+    <script>
+        const videoFeedImage = document.getElementById('videoFeed');
+        const streamSelect = document.getElementById('streamSelect');
+        const statusMessage = document.querySelector('.message'); // 获取显示状态的 P 标签
+
+        // 你的 Flask 应用的 video_feed 接口的基地址
+        // 确保这个 IP 地址和端口与你的 Flask worker 运行的地址一致
+        const flaskWorkerBaseUrl = 'http://127.0.0.1:5000/video_feed/';
+
+        // 初始加载第一个摄像头流
+        updateVideoStream();
+
+        // 当下拉选择框的值改变时，更新视频流
+        streamSelect.addEventListener('change', updateVideoStream);
+
+        function updateVideoStream() {
+            const selectedStreamId = streamSelect.value;
+            const videoFeedUrl = `${flaskWorkerBaseUrl}${selectedStreamId}`;
+            
+            videoFeedImage.src = videoFeedUrl; // 更新 img 标签的 src 属性
+            statusMessage.textContent = `视频流状态: 正在加载摄像头 ${selectedStreamId} ...`;
+            console.log(`正在请求视频流: ${videoFeedUrl}`);
+
+            // 监听图片加载成功事件
+            videoFeedImage.onload = function() {
+                statusMessage.textContent = `视频流状态: 已连接到摄像头 ${selectedStreamId}。`;
+            };
+
+            // 监听图片加载失败事件
+            videoFeedImage.onerror = function() {
+                statusMessage.textContent = `视频流状态: 无法连接到摄像头 ${selectedStreamId}。请确保后端已启动且推流正常。`;
+                console.error(`无法加载视频流: ${videoFeedUrl}`);
+                // 可以在这里设置一个占位图片，例如：
+                // videoFeedImage.src = 'error_placeholder.png'; 
+            };
+        }
+    </script>
+</body>
+</html>
