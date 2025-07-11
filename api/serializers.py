@@ -102,15 +102,20 @@ class CameraSerializer(serializers.ModelSerializer):
 
 
 class AlarmLogSerializer(serializers.ModelSerializer):
+    event_type = serializers.CharField(source='event.event_type', read_only=True)
+
     class Meta:
         model = AlarmLog
-        fields = ['id', 'time',  'result']
+        fields = ['id', 'title', 'time', 'result', 'status', 'description', 'event_id', 'event_type']
         read_only_fields = ['id']
+
 
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     role_id = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all())  # 新增
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User

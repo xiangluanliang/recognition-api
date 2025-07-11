@@ -89,7 +89,7 @@ class CameraViewSet(viewsets.ModelViewSet):
 
 
 class AlarmLogViewSet(viewsets.ModelViewSet):
-    queryset = AlarmLog.objects.all().order_by('-time')
+    queryset = AlarmLog.objects.select_related('event').all()
     serializer_class = AlarmLogSerializer
     permission_classes = [IsAuthenticated]
 
