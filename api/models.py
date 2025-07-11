@@ -73,6 +73,7 @@ class Camera(models.Model):
     is_active = models.BooleanField(null=False)
     url = models.CharField(max_length=64, null=True)
     password = models.CharField(max_length=64, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'cameras'
