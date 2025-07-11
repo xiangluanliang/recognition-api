@@ -1,5 +1,8 @@
 # api/views/data_views.py
+from datetime import timedelta
+
 from django.contrib.auth import authenticate
+from django.utils.timezone import now
 from rest_framework import permissions, viewsets, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -166,6 +169,7 @@ class LoginView(APIView):
             })
         else:
             return Response({'message': '密码错误'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 class EventLogViewSet(viewsets.ModelViewSet):
     queryset = EventLog.objects.all().order_by('-time')

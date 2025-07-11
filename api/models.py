@@ -155,7 +155,7 @@ class Feedback(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self): 
-        return f"'{self.title}' by {self.user.username}" 
+        return f"'{self.title}' by {self.user.username}"
 
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -200,3 +200,15 @@ class VideoAnalysisTask(models.Model):
 
     def __str__(self):
         return f"任务 {self.id} - 状态: {self.get_status_display()}"
+
+
+# api/models.py
+
+class DailyReport(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    date = models.DateField(auto_now_add=True, unique=True)  # 每天一条
+    content = models.TextField()  # 日报正文内容
+
+    class Meta:
+        db_table = 'daily_report'
+        verbose_name = 'AI 日报'
