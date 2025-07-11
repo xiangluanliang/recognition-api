@@ -24,6 +24,8 @@ from .views.video_views import (
 
 from .views.feedback_views import FeedbackView
 
+from .views.face_views import (KnownFacesDataAPI,LogEventAPI)
+
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'operation_logs', OperationLogViewSet)
@@ -43,5 +45,7 @@ urlpatterns = [
     path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
     path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
     path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('api/ai/known-faces/', KnownFacesDataAPI.as_view(), name='api-ai-known-faces'),
+    path('api/ai/log-event/', LogEventAPI.as_view(), name='api-ai-log-event'),
+] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
