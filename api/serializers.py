@@ -105,9 +105,11 @@ class CameraSerializer(serializers.ModelSerializer):
 
 
 class AlarmLogSerializer(serializers.ModelSerializer):
+    event_type = serializers.CharField(source='event.event_type', read_only=True)
+
     class Meta:
         model = AlarmLog
-        fields = ['id', 'title', 'time', 'result', 'status', 'description', 'event_id']
+        fields = ['id', 'title', 'time', 'result', 'status', 'description', 'event_id', 'event_type']
         read_only_fields = ['id']
 
 
