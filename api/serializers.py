@@ -151,6 +151,7 @@ class EventLogSerializer(serializers.ModelSerializer):
     person_id = serializers.PrimaryKeyRelatedField(source='person', read_only=True)
     person_name = serializers.CharField(source='person.name', read_only=True)
 
+
     class Meta:
         model = EventLog
         fields = [

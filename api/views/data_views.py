@@ -1,7 +1,11 @@
 # api/views/data_views.py
-from datetime import timedelta
+from _pydatetime import timedelta
+from datetime import datetime, time
 
 from django.contrib.auth import authenticate
+from django.db.models import Count
+from django.db.models.functions import TruncDay
+from django.utils import timezone
 from django.utils.timezone import now
 from rest_framework import permissions, viewsets, status
 from rest_framework.authtoken.models import Token
@@ -10,6 +14,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from werkzeug.debug import console
 
 from ..models import (
     User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, DailyReport
@@ -40,7 +45,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # 先检查用户是否已登录认
         if not user.is_authenticated:
             return User.objects.none()
-        
+
         # 只有当用户登录后，才安全地访问 role_id
         if user.role_id == 1:
             return User.objects.all()
@@ -113,6 +118,16 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': '事件状态更新成功'})
 
+    def get_queryset(self):
+        queryset = AlarmLog.objects.select_related('event').all()
+        today_param = self.request.query_params.get("today")
+
+        if today_param == "true":
+            today = timezone.now().date()
+            queryset = queryset.filter(event__time__date=today)
+
+        return queryset
+
     @action(detail=True, methods=['get'], url_path='event_detail')
     def event_detail(self, request, pk=None):
         alarm = self.get_object()
@@ -126,9 +141,34 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
             'image_path': event.image_path,
         })
 
+    @action(detail=False, methods=['get'], url_path='trend')
+    def trend(self, request):
+        console.log('进来了')
+        today = now().date()
+        start_date = today - timedelta(days=6)  # 最近7天
+
+        alarms = (
+            AlarmLog.objects
+            .filter(time__date__gte=start_date, time__date__lte=today)
+            .annotate(day=TruncDay('time'))
+            .values('day')
+            .annotate(count=Count('id'))
+            .order_by('day')
+        )
+
+        date_list = [(start_date + timedelta(days=i)).strftime('%m-%d') for i in range(7)]
+        count_dict = {alarm['day'].strftime('%m-%d'): alarm['count'] for alarm in alarms}
+        count_list = [count_dict.get(date, 0) for date in date_list]
+
+        return Response({
+            "dates": date_list,
+            "counts": count_list,
+        })
+
 
 class RegisterView(APIView):
     permission_classes = []  # 注册接口允许匿名访问
+
     def post(self, request):
         print(request.data)
         serializer = RegisterSerializer(data=request.data)
@@ -164,7 +204,7 @@ class LoginView(APIView):
                     'email': user.email,
                     'status': user.status,
                     'created_at': user.created_at,
-                    'role':user.role_id.id
+                    'role': user.role_id.id
                 }
             })
         else:

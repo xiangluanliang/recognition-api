@@ -33,6 +33,8 @@ router.register(r'cameras', CameraViewSet)
 router.register(r'alarm_logs', AlarmLogViewSet)
 router.register(r'event_logs', EventLogViewSet)
 router.register('daily_report', DailyReportViewSet, basename='daily_report')
+router.register(r'cameras', CameraViewSet)
+router.register(r'feedback', FeedbackView)
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
@@ -41,5 +43,5 @@ urlpatterns = [
     path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
     path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
     path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
-] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
