@@ -45,7 +45,7 @@ urlpatterns = [
     path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
     path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
     path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
-    path('api/ai/known-faces/', KnownFacesDataAPI.as_view(), name='api-ai-known-faces'),
-    path('api/ai/log-event/', LogEventAPI.as_view(), name='api-ai-log-event'),
+    path('ai/known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
+    path('ai/log-event/', LogEventAPI.as_view(), name='ai-log-event'),
 ] #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
