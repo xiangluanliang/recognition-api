@@ -71,6 +71,9 @@ class Camera(models.Model):
     location = models.CharField(max_length=128, null=True)
     camera_type = models.CharField(max_length=32, null=True)
     is_active = models.BooleanField(null=False)
+    url = models.CharField(max_length=64, null=True)
+    password = models.CharField(max_length=64, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'cameras'
@@ -146,8 +149,6 @@ class AlarmLog(models.Model):
         verbose_name = '报警记录'
         verbose_name_plural = '报警记录'
 
-    def __str__(self):
-        return f"{self.source_type} @ {self.time}"
 
 #  Feedback 模型 
 class Feedback(models.Model):
@@ -157,8 +158,7 @@ class Feedback(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self): 
-        return f"'{self.title}' by {self.user.username}" 
-
+        return f"'{self.title}' by {self.user.username}"
 
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -203,3 +203,15 @@ class VideoAnalysisTask(models.Model):
 
     def __str__(self):
         return f"任务 {self.id} - 状态: {self.get_status_display()}"
+
+
+# api/models.py
+
+class DailyReport(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    date = models.DateField(auto_now_add=True, unique=True)  # 每天一条
+    content = models.TextField()  # 日报正文内容
+
+    class Meta:
+        db_table = 'daily_report'
+        verbose_name = 'AI 日报'

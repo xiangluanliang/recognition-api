@@ -1,32 +1,37 @@
+"""
+enroll_face.py
+
+这是一个辅助命令行工具，用于通过本地摄像头捕捉人脸图像，
+提取人脸特征向量，并将新用户的人脸信息直接注册到 PostgreSQL 数据库的 'person' 表中。
+ID 由数据库自动生成。用户可以手动设置 state 字段（0为非危险人员，1为危险人员）。
+"""
+
 import cv2
 import sys
 import os
 import numpy as np
 import base64
-import json # 新增：用于将 NumPy 数组转换为 JSON 字符串
-import psycopg2 # 新增：用于数据库操作
-import datetime # 新增：用于可能的时间戳字段，虽然person表没有，但这是一个好习惯
+import json
+import psycopg2
+import datetime
 
-# 将 script/ 目录添加到 Python 路径，以便导入 video_processing_worker 中的 VisionServiceWorker
-# 假设 enroll_face.py 与 script 目录同级
+# 将 script/ 目录添加到 Python 路径，以便导入 video_processing_worker 中的 VisionServiceWorker。
 sys.path.append(os.path.join(os.path.dirname(__file__), 'script'))
-from video_processing_worker import VisionServiceWorker # 导入 VisionServiceWorker 类
+from video_processing_worker import VisionServiceWorker
 
 # --- 配置 ---
-WEBCAM_ID = 0 # 使用默认摄像头
+WEBCAM_ID = 0
 
-# --- 数据库连接配置 (与 video_processing_worker.py 保持一致) ---
-# 建议通过环境变量设置，这里为了演示直接使用硬编码（但生产环境应避免）
+# --- 数据库连接配置 ---
 DB_HOST = os.environ.get('DB_HOST', 'your_db_host') # <<< 替换为你的数据库主机
 DB_NAME = os.environ.get('DB_NAME', 'your_db_name') # <<< 替换为你的数据库名称
 DB_USER = os.environ.get('DB_USER', 'your_db_user') # <<< 替换为你的数据库用户
 DB_PASSWORD = os.environ.get('DB_PASSWORD', 'your_db_password') # <<< 替换为你的数据库密码
-DB_PORT = os.environ.get('DB_PORT', '5432') # PostgreSQL 默认端口，如果不同请替换
+DB_PORT = os.environ.get('DB_PORT', '5432')
 
 print(">>> 人脸特征录入工具启动 <<<")
 print("请将您的脸部对准摄像头，然后按下 's' 键捕捉，或按 'q' 键退出。")
 
-# 实例化 VisionServiceWorker
 try:
     enroll_worker = VisionServiceWorker()
 except RuntimeError as e:
@@ -35,7 +40,7 @@ except RuntimeError as e:
 
 
 def get_db_connection():
-    """建立并返回一个数据库连接."""
+    """建立并返回一个数据库连接。"""
     try:
         conn = psycopg2.connect(
             host=DB_HOST,
@@ -49,39 +54,46 @@ def get_db_connection():
         print(f"错误: 无法连接到数据库。详情: {e}")
         return None
 
-# 修改此函数以适应数据库自动生成 ID
-def save_person_to_db(person_name, face_image_path, face_embedding_list):
-    """将人脸信息保存到 person 表中，ID由数据库自动生成。"""
+# 修改 save_person_to_db 函数，使其接受 state 参数
+def save_person_to_db(person_name: str, state: int, face_image_path: str, face_embedding_list: list) -> int | None:
+    """
+    将新录入的人脸信息保存到 'person' 表中。
+    ID 由数据库自动生成。state 由调用者传入。
+    返回新生成的 person_id 或 None (如果保存失败)。
+    """
     conn = None
+    new_person_id = None
     try:
         conn = get_db_connection()
         if conn:
             cur = conn.cursor()
-            # 确保 face_embedding 是 JSON 字符串
             face_embedding_json_str = json.dumps(face_embedding_list)
 
-            # 修改 INSERT 语句：不再包含 id 列
             insert_query = """
-            INSERT INTO person (name, face_image_path, face_embedding)
-            VALUES (%s, %s, %s) RETURNING id; -- RETURNING id 可以获取自动生成的ID
+            INSERT INTO person (name, state, face_image_path, face_embedding)
+            VALUES (%s, %s, %s, %s) RETURNING id;
             """
+            # 将传入的 state 参数用于 SQL 插入
             cur.execute(insert_query, (
                 person_name,
+                state, # <-- 这里使用传入的 state 参数
                 face_image_path,
                 face_embedding_json_str
             ))
-            new_person_id = cur.fetchone()[0] # 获取自动生成的ID
+            new_person_id = cur.fetchone()[0]
             conn.commit()
             cur.close()
-            print(f"\n成功将 {person_name} (自动生成ID: {new_person_id}) 的人脸信息保存到数据库。")
-            return True
+            print(f"\n成功将 '{person_name}' (ID: {new_person_id}, State: {state}) 的人脸信息保存到数据库。")
+            return new_person_id
     except Exception as e:
         print(f"\n错误: 无法将人脸信息保存到数据库。详情: {e}")
-        print("请检查数据库连接配置和表结构。")
-        return False
+        print("请检查数据库连接配置、表结构或是否存在违反唯一约束的情况（如 name 字段如果被设为唯一）。")
+        if conn:
+            conn.rollback()
     finally:
         if conn:
             conn.close()
+    return None
 
 cap = cv2.VideoCapture(WEBCAM_ID)
 if not cap.isOpened():
@@ -91,20 +103,33 @@ if not cap.isOpened():
 face_captured_success = False
 person_name = input("请输入您要录入的姓名 (例如: 张三): ")
 
+# 新增：询问用户 state
+while True:
+    try:
+        person_state_input = input("请输入人员状态 (0: 非危险人物, 1: 危险人物): ")
+        person_state = int(person_state_input)
+        if person_state not in [0, 1]:
+            print("输入无效。状态只能是 0 或 1。")
+        else:
+            break
+    except ValueError:
+        print("输入无效。请输入数字 0 或 1。")
+
 while True:
     ret, frame = cap.read()
     if not ret:
         print("无法读取摄像头帧。")
         break
 
-    display_frame = frame.copy() # 复制帧用于显示，避免在原始帧上绘制
+    display_frame = frame.copy()
     cv2.putText(display_frame, "Press 's' to capture, 'q' to quit", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    cv2.putText(display_frame, f"Name: {person_name}, State: {person_state}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
-    detected_faces = enroll_worker.detect_faces(frame) # 使用 enroll_worker 实例
+
+    detected_faces = enroll_worker.detect_faces(frame)
     if detected_faces:
-        # 只处理检测到的第一张脸
         (x1, y1, x2, y2) = detected_faces[0]['box_coords']
-        cv2.rectangle(display_frame, (x1, y1), (x2, y2), (255, 0, 0), 2) # Blue box for detection
+        cv2.rectangle(display_frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
     cv2.imshow("Face Enrollment - Press 's' to Capture", display_frame)
 
@@ -119,16 +144,16 @@ while True:
                 face_embedding = enroll_worker.extract_face_features(cropped_face)
 
                 if face_embedding.size > 0:
-                    # 将 NumPy 数组转换为 Python 列表，以便 JSON 序列化和存储到数据库
                     face_embedding_list = face_embedding.tolist()
                     
-                    # 假设 face_image_path 可以是一个占位符或实际的存储路径
-                    image_path_for_db = f'/media/faces/{person_name.lower().replace(" ", "_")}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.jpg'
+                    safe_person_name = person_name.strip().replace(" ", "_").lower()
+                    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S%f")
+                    image_path_for_db = f'/media/faces/{safe_person_name}_{timestamp}.jpg'
 
-                    # 调用 save_person_to_db，不再传递 person_id
-                    if save_person_to_db(person_name, image_path_for_db, face_embedding_list):
+                    # 调用 save_person_to_db 时传入 person_state
+                    if save_person_to_db(person_name, person_state, image_path_for_db, face_embedding_list):
                         face_captured_success = True
-                        break # 捕获成功并保存到数据库后退出循环
+                        break
                     else:
                         print("错误: 保存到数据库失败。")
                 else:
