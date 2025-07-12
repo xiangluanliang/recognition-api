@@ -41,22 +41,7 @@ venv\Scripts\activate
 
 4. 创建或检查 `requirements.txt` 文件
 
-`requirements.txt` 文件定义了项目所需的所有Python包及其版本。请在项目根目录下创建（或检查）此文件，并确保其包含以下内容，以保证团队成员环境一致：
-
-```txt
-asgiref==3.9.0
-Django==5.2.4
-django-cors-headers==4.7.0
-djangorestframework==3.16.0
-drf-yasg==1.21.10
-inflection==0.5.1
-packaging==25.0
-pytz==2025.2
-PyYAML==6.0.2
-sqlparse==0.5.3
-tzdata==2025.2
-uritemplate==4.2.0
-```
+`requirements.txt` 文件定义了项目所需的所有Python包及其版本。请在项目根目录下创建（或检查）此文件，并确保团队成员环境一致：
 
 **提示**: 如果您后续安装了新的包，可以使用 `pip freeze > requirements.txt` 命令来更新此文件。
 
@@ -87,11 +72,13 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-服务器默认运行在 `http://127.0.0.1:8000/`。您可以通过访问以下地址来验证项目是否成功运行：
+> 服务器运行在 `http://8.152.101.217/:8000/`
 
-- **API文档 (Swagger)**: [http://127.0.0.1:8000/swagger/](https://www.google.com/search?q=http://127.0.0.1:8000/swagger/)
-- **测试API接口**: [http://127.0.0.1:8000/api/hello/](https://www.google.com/search?q=http://127.0.0.1:8000/api/hello/)
-- **Django管理后台**: [http://127.0.0.1:8000/admin/](https://www.google.com/search?q=http://127.0.0.1:8000/admin/)
+您可以通过访问以下地址来验证项目是否成功运行：
+
+- **API文档 (Swagger)**: [http://127.0.0.1:8000/swagger/](http://127.0.0.1:8000/swagger/)
+- **测试API接口**: [http://127.0.0.1:8000/api/hello/](http://127.0.0.1:8000/api/hello/)
+- **Django管理后台**: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
 
 如果以上地址都能正常访问，则说明您的后端开发环境已成功搭建。
 

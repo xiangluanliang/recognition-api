@@ -2,47 +2,62 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                echo "拉取分支: ${env.BRANCH_NAME}"
-                checkout scm
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                echo "在虚拟环境中安装依赖..."
-                sh '''
-                    . /var/www/recognition-api/venv/bin/activate
-                    pip install --no-cache-dir --retries 3 --timeout 60 -r requirements.txt \
-                        -i https://pypi.tuna.tsinghua.edu.cn/simple \
-                        --trusted-host pypi.tuna.tsinghua.edu.cn
-                '''
-            }
-        }
-
-
-        stage('Migrate Database') {
+        stage('Prepare Environment') {
             steps {
                 script {
-                    // 根据分支名，选择要加载的环境文件
-                    def envFile = (env.BRANCH_NAME == 'master') ? '.env.production' : '.env.test'
-                    
-                    // 在一个sh块里执行所有需要环境变量的命令
-                    sh """
-                        . /var/www/recognition-api/venv/bin/activate
-                        
-                        # 从对应的.env文件加载并导出环境变量
-                        export \$(cat /var/www/recognition-api/${envFile} | xargs)
-                        
-                        # 现在，环境变量已经设置好了，可以执行命令了
-                        echo "为 ${env.BRANCH_NAME} 分支执行数据库迁移..."
-                        python manage.py migrate
-
-                        echo "为 ${env.BRANCH_NAME} 分支收集静态文件..."
-                        python manage.py collectstatic --noinput
-                    """
+                    if (env.BRANCH_NAME == 'master') {
+                        env.DEPLOY_DIR = '/var/www/recognition-api-prod'
+                    } else {
+                        env.DEPLOY_DIR = '/var/www/recognition-api-test'
+                    }
+                    env.ENV_FILE = '.env'
+                    echo "Branch: ${env.BRANCH_NAME}"
+                    echo "Deploy Directory: ${env.DEPLOY_DIR}"
+                    echo "Environment File: ${env.ENV_FILE}"
                 }
+            }
+        }
+
+        stage('Deploy Code') {
+            steps {
+                echo "正在将 ${env.BRANCH_NAME} 分支的代码同步到 ${env.DEPLOY_DIR}..."
+                sh "rsync -av --delete --exclude='.git/' --exclude='venv/' --exclude='__pycache__/' --exclude='.env' ${WORKSPACE}/ ${env.DEPLOY_DIR}/"
+            }
+        }
+        
+        stage('Setup Python Environment & Dependencies') {
+            steps {
+                echo "在 ${env.DEPLOY_DIR} 中准备Python环境并安装依赖..."
+                // 在一个sh块里执行，cd会保持在块内有效
+                sh """
+                    set -e
+                    cd ${env.DEPLOY_DIR}
+                    
+                    if [ ! -d "venv" ]; then
+                        python3 -m venv venv
+                    fi
+                    
+                    . venv/bin/activate
+                    pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+                """
+            }
+        }
+
+        stage('Run Django Commands') {
+            steps {
+                echo "为 ${env.BRANCH_NAME} 环境执行数据库迁移和静态文件收集..."
+                // 现在的脚本非常简洁
+                sh """
+                    set -e
+                    cd ${env.DEPLOY_DIR}
+                    . venv/bin/activate
+                    
+                    echo "执行数据库迁移..."
+                    python manage.py migrate
+
+                    echo "收集静态文件..."
+                    python manage.py collectstatic --noinput
+                """
             }
         }
 
@@ -50,10 +65,8 @@ pipeline {
             steps {
                 script {
                     if (env.BRANCH_NAME == 'master') {
-                        echo "重启 master 环境的Gunicorn服务..."
                         sh "sudo systemctl restart gunicorn-prod"
                     } else if (env.BRANCH_NAME == 'test') {
-                        echo "重启 test 环境的Gunicorn服务..."
                         sh "sudo systemctl restart gunicorn-test"
                     }
                 }
