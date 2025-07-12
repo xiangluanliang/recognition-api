@@ -1,4 +1,4 @@
-
+from django.db import router
 # api/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -14,7 +14,8 @@ from .views.data_views import (
     AlarmLogViewSet,
     UserViewSet,
     RegisterView,
-    LoginView, DailyReportViewSet,
+    LoginView,
+    DailyReportViewSet,
 )
 
 from .views.video_views import (
@@ -24,13 +25,14 @@ from .views.video_views import (
 
 from .views.feedback_views import FeedbackView
 
-router = DefaultRouter()
+alarm_router = DefaultRouter()
+alarm_router.register(r'alarm_logs', AlarmLogViewSet, basename="alarm-log")
 router.register(r'users', UserViewSet)
 router.register(r'operation_logs', OperationLogViewSet)
 router.register(r'subjects', SubjectViewSet)
 router.register(r'warning_zones', WarningZoneViewSet)
 router.register(r'cameras', CameraViewSet)
-router.register(r'alarm_logs', AlarmLogViewSet)
+# router.register(r'alarm_logs', AlarmLogViewSet)
 router.register(r'event_logs', EventLogViewSet)
 router.register('daily_report', DailyReportViewSet, basename='daily_report')
 router.register(r'cameras', CameraViewSet)
@@ -43,5 +45,6 @@ urlpatterns = [
     path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
     path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
     path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
+    path('',include(alarm_router.urls))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
