@@ -62,7 +62,7 @@ def generate_text_report():
     summary = collect_data()
     prompt = build_prompt(summary)
 
-    client = OpenAI()
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
