@@ -35,7 +35,7 @@ class VisionServiceWorker:
 
             # --- 模型文件路径配置 (作为实例属性) ---
             # 从 script/ 向上走两层 (../../) 到 recognition-api/，再进入 dnn_models/
-            self.MODEL_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'dnn_models') 
+            self.MODEL_DIR = os.path.join(os.path.dirname(__file__), '../../api', '..', 'dnn_models')
 
             # 人脸检测模型 (用于找到人脸框)
             self.FACE_DETECTOR_PROTOTXT_PATH = os.path.join(self.MODEL_DIR, 'opencv_face_detector.pbtxt')

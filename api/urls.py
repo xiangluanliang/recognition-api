@@ -18,11 +18,6 @@ from .views.data_views import (
     DailyReportViewSet,
 )
 
-from .views.video_views import (
-    TaskResultView,
-    VideoUploadAndProcessView
-)
-
 from .views.feedback_views import FeedbackView
 from .views.face_views import (KnownFacesDataAPI,LogEventAPI)
 
@@ -43,8 +38,6 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('', include(router.urls)),
     path('register/', RegisterView.as_view(), name='register'),
-    path('process-video/', VideoUploadAndProcessView.as_view(), name='process-video'),
-    path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
     path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
     path('',include(alarm_router.urls)),
     path('ai/known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
