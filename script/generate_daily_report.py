@@ -4,31 +4,32 @@ import os
 import django
 from datetime import datetime, timedelta
 from django.db.models import Count
+from django.utils import timezone
 from openai import OpenAI
 
 # 设置 Django 环境
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.test')
 django.setup()
 
-from api.models import EventLog, Camera, DailyReport
+from api.models import EventLog, Camera, DailyReport, AlarmLog
 
 
 def collect_data():
-    today = datetime.now().date()
-    start = datetime.combine(today, datetime.min.time())
-    end = datetime.combine(today, datetime.max.time())
+    today = timezone.localdate()
+    start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+    end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
 
-    events = EventLog.objects.filter(time__range=(start, end))
+    alarms = AlarmLog.objects.filter(time__range=(start, end))
 
     summary = {
         '日期': str(today),
-        '总事件数': events.count(),
-        '未处理事件数': events.filter(status=0).count(),
-        '处理中事件数': events.filter(status=1).count(),
-        '已处理事件数': events.filter(status=2).count(),
+        '总事件数': alarms.count(),
+        '未处理事件数': alarms.filter(status=0).count(),
+        '处理中事件数': alarms.filter(status=1).count(),
+        '已处理事件数': alarms.filter(status=2).count(),
     }
 
-    type_counts = events.values('event_type').annotate(count=Count('event_type'))
+    type_counts = alarms.values('event__event_type').annotate(count=Count('id'))
     for item in type_counts:
         summary[f"类型:{item['event_type']}"] = item['count']
 

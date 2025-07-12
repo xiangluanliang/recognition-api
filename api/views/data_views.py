@@ -162,7 +162,7 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
             if day:
                 count_dict[day.strftime('%m-%d')] = alarm['count']
         count_list = [count_dict.get(date, 0) for date in date_list]
-        print("🎯 alarm trend 数据原始结果：", list(alarms))
+        # print("alarm trend 数据原始结果：", list(alarms))
         return Response({
             "dates": date_list,
             "counts": count_list,
