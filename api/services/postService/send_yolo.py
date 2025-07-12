@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from django.db import connection
 from ...models import VideoAnalysisTask
 
+<<<<<<< Updated upstream
 
 # 这是一个辅助函数，专门用于从AI Worker下载文件
 def download_file_from_worker(download_url: str) -> ContentFile | None:
@@ -77,3 +78,27 @@ def my_yolo(task_id: int, public_video_url: str):
         task.status = -1
         task.analysis_result = {'error': str(e)}
         task.save()
+=======
+# 假设您已经定义了异常区域坐标和安全距离
+abnormal_zone_coords = [300, 300, 200, 200]
+safe_distance = 50  # 示例安全距离
+video_path = "D:\\Desktop\\abnormal_4.mp4"
+response = requests.post("http://localhost:5000/detect-abnormal", json={"video_path": video_path})
+
+# response = requests.post(
+#     "http://localhost:5000/detect-abnormal",
+#     json={
+#         "video_path": video_path,
+#         "abnormal_zone_coords": abnormal_zone_coords,  # 传递异常区域坐标
+#         "safe_distance": safe_distance  # 传递安全距离
+#     }
+# )
+
+if response.ok:
+    data = response.json()
+    print("✅ 检测完成")
+    print("检测信息：", data["message"])
+    print("处理后视频地址：", data["video_url"])
+else:
+    print("请求失败:", response.text)
+>>>>>>> Stashed changes
