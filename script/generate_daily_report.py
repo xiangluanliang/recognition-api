@@ -5,13 +5,19 @@ import django
 from datetime import datetime, timedelta
 from django.db.models import Count
 from django.utils import timezone
-from openai import OpenAI
 
 # 设置 Django 环境
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.test')
 django.setup()
 
 from api.models import EventLog, Camera, DailyReport, AlarmLog
+
+# 替代 openai，用 transformers 本地模型
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+# 初始化 CPU 轻量模型
+tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
+model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
 
 
 def collect_data():
@@ -31,7 +37,7 @@ def collect_data():
 
     type_counts = alarms.values('event__event_type').annotate(count=Count('id'))
     for item in type_counts:
-        summary[f"类型:{item['event_type']}"] = item['count']
+        summary[f"类型:{item['event__event_type']}"] = item['count']
 
     total_cameras = Camera.objects.count()
     active_cameras = Camera.objects.filter(is_active=True).count()
@@ -41,7 +47,6 @@ def collect_data():
     return summary
 
 
-# === 步骤二：构建 Prompt（CoT）===
 def build_prompt(summary):
     prompt = """
 你是一个安防监控系统的智能助手，请根据以下数据生成一份简明的中文监控日报。
@@ -55,27 +60,20 @@ def build_prompt(summary):
 
 请输出一段自然语言描述，总结当天监控情况。
 """
-    return prompt
+    return prompt.strip()
 
 
 def generate_text_report():
     summary = collect_data()
     prompt = build_prompt(summary)
 
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "你是一个善于总结监控事件的助手。"},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.5
-    )
-
-    content = response.choices[0].message.content
+    # 使用本地轻量模型生成日报
+    inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+    outputs = model.generate(**inputs, max_new_tokens=256)
+    content = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
     # 写入数据库
-    DailyReport.objects.update_or_create(date=datetime.now().date(), defaults={'content': content})
+    DailyReport.objects.update_or_create(date=timezone.localdate(), defaults={'content': content})
     print("✅ 日报已生成并写入数据库：\n", content)
 
 
