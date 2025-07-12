@@ -24,9 +24,11 @@ from .views.video_views import (
 )
 
 from .views.feedback_views import FeedbackView
+from .views.face_views import (KnownFacesDataAPI,LogEventAPI)
 
 alarm_router = DefaultRouter()
 alarm_router.register(r'alarm_logs', AlarmLogViewSet, basename="alarm-log")
+router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'operation_logs', OperationLogViewSet)
 router.register(r'subjects', SubjectViewSet)
@@ -35,8 +37,7 @@ router.register(r'cameras', CameraViewSet)
 # router.register(r'alarm_logs', AlarmLogViewSet)
 router.register(r'event_logs', EventLogViewSet)
 router.register('daily_report', DailyReportViewSet, basename='daily_report')
-router.register(r'cameras', CameraViewSet)
-router.register(r'feedback', FeedbackView)
+# router.register(r'feedback', FeedbackView)
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
@@ -46,5 +47,7 @@ urlpatterns = [
     path('task-result/<int:pk>/', TaskResultView.as_view(), name='task-result'),
     path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
     path('',include(alarm_router.urls))
+    path('ai/known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
+    path('ai/log-event/', LogEventAPI.as_view(), name='ai-log-event'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

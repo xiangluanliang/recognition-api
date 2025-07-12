@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib.auth import get_user_model
 import os
 from rest_framework import serializers
 from .models import (
@@ -196,3 +195,40 @@ class DailyReportSerializer(serializers.ModelSerializer):
         model = DailyReport
         fields = ['id', 'date', 'content']
         read_only_fields = ['id', 'date', 'content']
+
+class KnownFaceSerializer(serializers.ModelSerializer):
+    """
+    一个只读的序列化器，仅包含AI人脸比对所必需的字段。
+    """
+    class Meta:
+        model = Subject
+        # 只选择AI Worker需要的最少字段，减少网络传输
+        fields = ['id', 'name', 'state', 'face_embedding']
+        read_only_fields = fields
+
+
+class EventLogCreateSerializer(serializers.ModelSerializer):
+    """
+    一个只写的序列化器，用于接收来自AI Worker的事件数据并创建EventLog记录。
+    它接收的是ID，而不是复杂的对象。
+    """
+    # 让序列化器接受来自AI Worker的摄像头ID
+    # 我们期望AI Worker发送 'camera': 1 这样的数据
+    camera = serializers.PrimaryKeyRelatedField(queryset=Camera.objects.all())
+
+    # person字段是可选的，因为并非所有事件都关联到person
+    # AI Worker可以发送 'person': 5 或者不发送此字段
+    person = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), allow_null=True, required=False)
+
+    class Meta:
+        model = EventLog
+        # 定义AI Worker需要提交的字段
+        fields = [
+            'event_type',
+            'camera',
+            'time',
+            'confidence',
+            'image_path',
+            'video_clip_path',
+            'person'
+        ]
