@@ -100,6 +100,11 @@ class CameraViewSet(viewsets.ModelViewSet):
     serializer_class = CameraSerializer
     permission_classes = [IsAuthenticated]
 
+    @action(detail=False, methods=["get"])
+    def count(self, request):
+        total_cameras = self.get_queryset().count()
+        return Response({"count": total_cameras})
+
 
 class AlarmLogViewSet(viewsets.ModelViewSet):
     queryset = AlarmLog.objects.select_related('event').all()
