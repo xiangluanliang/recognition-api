@@ -143,7 +143,6 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='trend')
     def trend(self, request):
-        console.log('进来了')
         today = now().date()
         start_date = today - timedelta(days=6)  # 最近7天
 
@@ -157,9 +156,13 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
         )
 
         date_list = [(start_date + timedelta(days=i)).strftime('%m-%d') for i in range(7)]
-        count_dict = {alarm['day'].strftime('%m-%d'): alarm['count'] for alarm in alarms}
+        count_dict = {}
+        for alarm in alarms:
+            day = alarm['day']
+            if day:
+                count_dict[day.strftime('%m-%d')] = alarm['count']
         count_list = [count_dict.get(date, 0) for date in date_list]
-
+        print("🎯 alarm trend 数据原始结果：", list(alarms))
         return Response({
             "dates": date_list,
             "counts": count_list,
