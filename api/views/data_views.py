@@ -67,6 +67,11 @@ class UserViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("无权限删除用户")
         instance.delete()
 
+    @action(detail=False, methods=['get'], url_path='count')
+    def count(self, request):
+        user_count = User.objects.count()
+        return Response({'count': user_count})
+
 
 class OperationLogViewSet(viewsets.ModelViewSet):
     queryset = OperationLog.objects.all().order_by('-timestamp')
