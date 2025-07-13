@@ -92,16 +92,17 @@ class WarningZoneSerializer(serializers.ModelSerializer):
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Camera
-        fields = ['id', 'name', 'location', 'camera_type', 'is_active']
+        fields = ['id', 'name', 'location', 'camera_type', 'is_active', 'url', 'password']
         read_only_fields = ['id']
 
     def create(self, validated_data):
-        camera = Camera.objects.create(**validated_data)
+        # 自动绑定当前登录用户
+        user = self.context['request'].user
+        camera = Camera.objects.create(user=user, **validated_data)
         if not camera.name:
             camera.name = f"摄像头{camera.id}"
             camera.save()
         return camera
-
 
 class AlarmLogSerializer(serializers.ModelSerializer):
     event_type = serializers.CharField(source='event.event_type', read_only=True)
