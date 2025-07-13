@@ -144,6 +144,8 @@ MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR / 'media')
 LOGIN_URL = None
 LOGOUT_URL = 'rest_framework:logout'
 
+APPEND_SLASH = False
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
@@ -176,4 +178,4 @@ LOGGING = {
     },
 }
 
-APPEND_SLASH = False
+
