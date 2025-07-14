@@ -46,8 +46,7 @@ class SubjectSerializer(serializers.ModelSerializer):
                 f.write(chunk)
 
         # 使用MEDIA_URL构建返回给前端的URL
-        validated_data['face_image_path'] = os.path.join(settings.MEDIA_URL, 'subject_images', filename).replace('\\',
-                                                                                                                 '/')
+        validated_data['face_image_path'] = os.path.join(settings.MEDIA_URL, 'subject_images', filename).replace('\\', '/')
         return Subject.objects.create(**validated_data)
 
 
@@ -64,8 +63,10 @@ class WarningZoneSerializer(serializers.ModelSerializer):
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Camera
-        fields = ['id', 'name', 'location', 'camera_type', 'is_active', 'url', 'password']
-        read_only_fields = ['id']
+        # --- 这是需要修改的部分 ---
+        fields = ['id', 'name', 'location', 'camera_type', 'is_active', 'url', 'password', 'user']
+        read_only_fields = ['id', 'user']
+        # --- 修改结束 ---
 
     def create(self, validated_data):
         # 自动绑定当前登录用户
