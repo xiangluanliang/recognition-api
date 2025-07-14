@@ -15,6 +15,8 @@ import threading # 用于异步发送警报
 from flask import Flask, request, jsonify, Response
 from scipy.spatial.distance import euclidean
 
+from external.liveness_detector.predictor import LivenessDetector
+
 # 配置 Flask 应用
 app = Flask(__name__)
 
@@ -70,6 +72,11 @@ class VisionServiceWorker:
             # 在 Worker 初始化时加载所有模型和已知人脸数据
             self._load_all_models()
             self.known_faces_data = self._load_known_faces()
+
+            model_path = os.path.join(
+                os.path.dirname(__file__), "..", "resource", "anti_spoof_models", "2.7_80x80_MiniFASNetV2.pth"
+            )
+            self.liveness_model = LivenessDetector(model_path=model_path)
 
     def _get_db_connection(self):
         """建立并返回一个 PostgreSQL 数据库连接。"""
