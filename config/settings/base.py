@@ -141,8 +141,10 @@ AUTH_USER_MODEL = 'api.User'  # 如果你的 app 叫 api，就写 api.User
 MEDIA_URL = os.getenv('DJANGO_MEDIA_URL', '/media/')
 MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR / 'media')
 
-LOGIN_URL = 'rest_framework:login'
+LOGIN_URL = None
 LOGOUT_URL = 'rest_framework:logout'
+
+APPEND_SLASH = False
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -175,3 +177,5 @@ LOGGING = {
         },
     },
 }
+
+

@@ -114,6 +114,25 @@ class CameraViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(cameras, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'], url_path='flow_info')
+    def flow_info(self, request, pk=None):
+        try:
+            camera = self.get_object()
+            # 可加权限判断：只能查看自己的摄像头
+            if camera.user != request.user:
+                return Response({"detail": "没有权限查看该摄像头"}, status=403)
+            return Response({
+                "url": camera.url,
+                "password": camera.password,
+            })
+        except Camera.DoesNotExist:
+            return Response({"detail": "摄像头不存在"}, status=404)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
 
 class AlarmLogViewSet(viewsets.ModelViewSet):
     queryset = AlarmLog.objects.select_related('event').all()

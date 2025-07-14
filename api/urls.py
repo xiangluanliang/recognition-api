@@ -40,11 +40,8 @@ urlpatterns = [
     path('', include(router.urls)),
     path('register/', RegisterView.as_view(), name='register'),
     path('feedbacks/', FeedbackView.as_view(), name='feedback-list-create'),
-    path('',include(alarm_router.urls)),
-    path('ai/known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
-    path('ai/log-event/', LogEventAPI.as_view(), name='ai-log-event'),
-    path('ai/daily-summary/', DailyReportDataAPI.as_view(), name='api-ai-daily-summary'),
-    path('ai/daily-report/', SubmitDailyReportAPI.as_view(), name='api-ai-daily-report'),
-
+    path('', include(alarm_router.urls)),
+    path('known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
+    path('log-event/', LogEventAPI.as_view(), name='ai-log-event'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
