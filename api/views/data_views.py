@@ -1,8 +1,10 @@
 # api/views/data_views.py
+import os
 from datetime import datetime, time
 from datetime import timedelta
 
 from django.contrib.auth import authenticate
+from django.contrib.sites import requests
 from django.db.models import Count
 from django.db.models.functions import TruncDay
 from django.utils import timezone
@@ -94,6 +96,14 @@ class WarningZoneViewSet(viewsets.ModelViewSet):
     serializer_class = WarningZoneSerializer
     permission_classes = [IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        safe_distance = request.data.get('safe_distance')
+        safe_time = request.data.get('safe_time')
+
+        print("收到的安全距离:", safe_distance)
+        print("收到的安全时间:", safe_time)
+
+        return super().create(request, *args, **kwargs)
 
 class CameraViewSet(viewsets.ModelViewSet):
     queryset = Camera.objects.all()
@@ -260,19 +270,76 @@ class EventLogViewSet(viewsets.ModelViewSet):
         print(f"记录新事件：{event.event_type}，来自摄像头：{event.camera_id}")
 
 
-class DailyReportViewSet(viewsets.ViewSet):
-    @action(detail=False, methods=['get'], url_path='today')
-    def today(self, request):
-        today = now().date()
+class DailyReportDataAPI(APIView):
+    """
+    为本地AI机提供生成日报所需的数据摘要。
+    """
+    permission_classes = [IsAuthenticated]  # 保护此接口，需要认证
+
+    def get(self, request, *args, **kwargs):
+        """
+        当接收到GET请求时，从数据库收集数据并返回。
+        """
+        # 这部分逻辑直接从您的脚本中移入
+        today = timezone.localdate()
+        start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+        end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+
+        alarms = AlarmLog.objects.filter(time__range=(start, end))
+
+        summary = {
+            '日期': str(today),
+            '总事件数': alarms.count(),
+            '未处理事件数': alarms.filter(status=0).count(),
+            '处理中事件数': alarms.filter(status=1).count(),
+            '已处理事件数': alarms.filter(status=2).count(),
+            '摄像头总数': Camera.objects.count(),
+            '在线摄像头': Camera.objects.filter(is_active=True).count(),
+            '各类型事件统计': {},
+        }
+
+        type_counts = alarms.values('event__event_type').annotate(count=Count('id'))
+        for item in type_counts:
+            event_type = item.get('event__event_type')
+            if event_type:
+                summary['各类型事件统计'][event_type] = item['count']
+
+        return Response(summary, status=status.HTTP_200_OK)
+
+
+class SubmitDailyReportAPI(APIView):
+    """
+    接收本地AI机生成的报告文本，并存入数据库。
+    """
+    permission_classes = [IsAuthenticated]  # 保护此接口，需要认证
+
+    def post(self, request, *args, **kwargs):
+        """
+        当接收到POST请求时，将报告内容写入数据库。
+        """
+        report_content = request.data.get('content')
+        report_date_str = request.data.get('date')
+
+        if not report_content or not report_date_str:
+            return Response(
+                {"error": "请求体中必须包含 'content' 和 'date' 字段。"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            report = DailyReport.objects.get(date=today)
-            serializer = DailyReportSerializer(report)
-            return Response({
-                'date': str(today),
-                'content': serializer.data['content'],
-            })
-        except DailyReport.DoesNotExist:
-            return Response({
-                'date': str(today),
-                'content': '今日暂无生成的 AI 日报。',
-            })
+            # 将字符串格式的日期转换回date对象
+            report_date = datetime.strptime(report_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response(
+                {"error": "日期格式无效，请使用 'YYYY-MM-DD' 格式。"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 使用 update_or_create 避免重复创建当天的报告
+        report, created = DailyReport.objects.update_or_create(
+            date=report_date,
+            defaults={'content': report_content}
+        )
+
+        message = "日报更新成功。" if not created else "日报创建成功。"
+        return Response({"status": "success", "message": message}, status=status.HTTP_201_CREATED)
