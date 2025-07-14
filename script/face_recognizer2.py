@@ -4,6 +4,8 @@ import numpy as np
 import logging
 from scipy.spatial.distance import euclidean
 
+from external.liveness_detector.predictor import LivenessDetector
+
 # 配置日志。将级别设置为 DEBUG 以获取最详细的输出。
 # 修正了格式字符串，移除了可能导致错误的 %(funcName)s (在某些Python版本或特定上下文中)
 # 使用 %(name)s 来表示logger的名称（这里是FaceRecognizer）， %(funcName)s 可以单独在消息中打印如果需要
@@ -37,6 +39,9 @@ class VisionServiceWorker:
             self.FACE_RECOGNITION_NET = None
             self._load_all_models()
             self.logger = logging.getLogger(__name__)  # 初始化一个logger实例
+            self.liveness_model_path = os.path.join(current_script_dir, '..', 'resource', 'anti_spoof_models',
+                                                    '2.7_80x80_MiniFASNetV2.pth')
+            self.liveness_detector = LivenessDetector(self.liveness_model_path)
 
     def _load_all_models(self):
         # 获取当前 logger 实例，这样在日志中会显示 (FaceRecognizer)
@@ -171,40 +176,30 @@ class VisionServiceWorker:
         return results
 
     def perform_liveness_check(self, frame: np.ndarray, detected_faces: list) -> bool:
-        """
-        进行活体检测。这是一个简易的基于图像模糊度的实现。
-        【重要】使用 VisionServiceWorker 内部定义的 LIVENESS_BLUR_THRESHOLD。
-        注意：此函数期望传入原始帧和在其上检测到的人脸框。
-        """
         logger = logging.getLogger(__name__)
         if not detected_faces:
             logger.debug("No faces detected for liveness check. Passing by default.")
             return True
-        if frame is None or frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
-            logger.warning("Received empty or invalid frame for liveness check.")
+        if frame is None or frame.size == 0:
+            logger.warning("Invalid frame for liveness check.")
             return True
 
         for face_info in detected_faces:
             x1, y1, x2, y2 = face_info['box_coords']
-            
-            h, w, _ = frame.shape
-            startY, endY = max(0, y1), min(h, y2)
-            startX, endX = max(0, x1), min(w, x2)
-
-            face_roi = frame[startY:endY, startX:endX]
+            face_roi = frame[y1:y2, x1:x2]
 
             if face_roi.size == 0 or face_roi.shape[0] < 20 or face_roi.shape[1] < 20:
-                logger.warning(f"Liveness check: Face ROI too small or invalid ({face_roi.shape[1]}x{face_roi.shape[0]}). Skipping blur detection for this ROI.")
+                logger.warning("Face ROI too small or invalid. Skipping.")
                 continue
 
-            gray_face_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
-            # 计算拉普拉斯方差
-            laplacian_variance = cv2.Laplacian(gray_face_roi, cv2.CV_64F).var()
-
-            logger.debug(f"Face ROI ({startX},{startY})-({endX},{endY}) Laplacian Variance: {laplacian_variance:.2f}")
-
-            if laplacian_variance < self.LIVENESS_BLUR_THRESHOLD:
-                logger.warning(f"Liveness check failed! Detected blurry/flat face (Variance: {laplacian_variance:.2f} < Threshold: {self.LIVENESS_BLUR_THRESHOLD:.2f}). Possible spoofing.")
+            try:
+                prob_real = self.liveness_detector.predict(face_roi)
+                logger.info(f"Liveness probability: {prob_real:.4f}")
+                if prob_real < 0.8:  # 阈值可调
+                    logger.warning("Liveness check failed. Possible spoof.")
+                    return False
+            except Exception as e:
+                logger.error(f"Liveness check exception: {e}")
                 return False
 
         return True
@@ -216,6 +211,7 @@ try:
 except RuntimeError as e:
     logging.critical(f"CRITICAL: Failed to initialize VisionServiceWorker. AI functions will not work. Error: {e}")
     vision_worker_instance = None
+
 
 def process_frame_face_recognition(frame: np.ndarray, known_faces_data: list, camera_id: int = 0) -> (np.ndarray, dict):
     """
@@ -323,3 +319,5 @@ def process_frame_face_recognition(frame: np.ndarray, known_faces_data: list, ca
 
     # 6. 返回最终处理好的图像帧和包含所有信息的字典
     return processed_frame_for_display, detection_data
+
+
