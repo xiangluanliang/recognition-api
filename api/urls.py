@@ -15,7 +15,8 @@ from .views.data_views import (
     UserViewSet,
     RegisterView,
     LoginView,
-    DailyReportViewSet,
+    DailyReportDataAPI,
+    SubmitDailyReportAPI,
 )
 
 from .views.feedback_views import FeedbackView
@@ -31,7 +32,7 @@ router.register(r'warning_zones', WarningZoneViewSet)
 router.register(r'cameras', CameraViewSet)
 # router.register(r'alarm_logs', AlarmLogViewSet)
 router.register(r'event_logs', EventLogViewSet)
-router.register('daily_report', DailyReportViewSet, basename='daily_report')
+# router.register('daily_report', DailyReportDataAPI, basename='daily_report')
 # router.register(r'feedback', FeedbackView)
 
 urlpatterns = [
@@ -42,5 +43,8 @@ urlpatterns = [
     path('',include(alarm_router.urls)),
     path('ai/known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
     path('ai/log-event/', LogEventAPI.as_view(), name='ai-log-event'),
+    path('ai/daily-summary/', DailyReportDataAPI.as_view(), name='api-ai-daily-summary'),
+    path('ai/daily-report/', SubmitDailyReportAPI.as_view(), name='api-ai-daily-report'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
