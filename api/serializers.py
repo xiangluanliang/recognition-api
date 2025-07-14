@@ -52,41 +52,13 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class WarningZoneSerializer(serializers.ModelSerializer):
-    video_clip = serializers.FileField(write_only=True, required=True)
-    video_clip_path = serializers.CharField(read_only=True)
+    # camera用PrimaryKeyRelatedField，直接传camera_id就行
+    camera = serializers.PrimaryKeyRelatedField(queryset=Camera.objects.all())
 
     class Meta:
         model = WarningZone
-        # 修复：添加 'video_clip' 和 'video_clip_path' 到fields
-        # 修改：camera_id -> camera
-        fields = ['id', 'camera', 'name', 'zone_type', 'zone_points', 'is_active', 'video_clip', 'video_clip_path']
-        read_only_fields = ['id', 'video_clip_path']
-
-    def create(self, validated_data):
-        video_file = validated_data.pop('video_clip')
-
-        # 优化：使用settings.MEDIA_ROOT构建路径
-        save_dir = os.path.join(settings.MEDIA_ROOT, 'incident_videos')
-        os.makedirs(save_dir, exist_ok=True)
-        filename = video_file.name
-        full_path = os.path.join(save_dir, filename)
-
-        with open(full_path, 'wb+') as f:
-            for chunk in video_file.chunks():
-                f.write(chunk)
-
-        relative_path = os.path.join('incident_videos', filename)
-        # 注意：这里我们假设IncidentDetectionLog模型有一个video_clip_path字段来保存路径
-        # validated_data['video_clip_path'] = os.path.join(settings.MEDIA_URL, relative_path).replace('\\', '/')
-
-        # 修复：create方法应该创建WarningZone对象，而不是IncidentDetectionLog
-        # 并且WarningZone模型本身没有video_clip_path字段，所以create方法不应该处理文件上传和路径保存
-        # 这里的逻辑需要根据你的业务重新定义。
-        # 一个可能的场景是，上传视频后，创建一个IncidentDetectionLog记录。
-        # 如果是这样，那么这个序列化器的目的就不应该是创建WarningZone。
-        # 为了让代码能跑通，我暂时注释掉文件处理，并修正create的对象。
-
-        return WarningZone.objects.create(**validated_data)
+        fields = ['id', 'camera', 'name', 'zone_type', 'zone_points', 'is_active']
+        read_only_fields = ['id']
 
 
 class CameraSerializer(serializers.ModelSerializer):
