@@ -19,12 +19,13 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
 # 替换模型加载部分：
-model_name = "Qwen/Qwen1.5-1.8B-Chat"
+model_name = "Qwen/Qwen1.5-0.5B-Chat"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).eval()
 
 model = model.eval()
+
 
 def collect_data():
     today = timezone.localdate()
@@ -33,22 +34,35 @@ def collect_data():
 
     alarms = AlarmLog.objects.filter(time__range=(start, end))
 
-    summary = {
-        '日期': str(today),
-        '总事件数': alarms.count(),
-        '未处理事件数': alarms.filter(status=0).count(),
-        '处理中事件数': alarms.filter(status=1).count(),
-        '已处理事件数': alarms.filter(status=2).count(),
-    }
+    summary = {}
 
+    # 日期信息
+    summary['日期'] = str(today)
+
+    # 总体告警情况
+    summary['总事件数'] = alarms.count()
+    summary['未处理事件数'] = alarms.filter(status=0).count()
+    summary['处理中事件数'] = alarms.filter(status=1).count()
+    summary['已处理事件数'] = alarms.filter(status=2).count()
+
+    # 告警类型统计（用中文）
+    EVENT_TYPE_MAP = dict(EventLog.EVENT_TYPE_CHOICES)
     type_counts = alarms.values('event__event_type').annotate(count=Count('id'))
+    type_summary = {}
     for item in type_counts:
-        summary[f"类型:{item['event__event_type']}"] = item['count']
+        etype = item['event__event_type']
+        cname = EVENT_TYPE_MAP.get(etype, etype)
+        type_summary[cname] = item['count']
+    summary['事件类型统计'] = type_summary
 
+    # 摄像头情况
     total_cameras = Camera.objects.count()
     active_cameras = Camera.objects.filter(is_active=True).count()
     summary['摄像头总数'] = total_cameras
     summary['在线摄像头'] = active_cameras
+    summary['离线摄像头'] = total_cameras - active_cameras
+
+    return summary
 
     # summary = {
     #     '日期': '2025-07-13',
@@ -64,15 +78,33 @@ def collect_data():
     #     '在线摄像头': 18,
     # }
 
-    return summary
-
 
 def build_prompt(summary):
-    prompt = "你是一个安防监控系统的智能助手，请根据以下监控统计数据生成一段简明扼要的中文日报：\n\n"
-    for k, v in summary.items():
-        prompt += f"- {k}: {v}\n"
-    prompt += "\n请输出一段自然语言中文报告，包含：事件概况、类型分布、摄像头状态，若有异常请提醒。"
+    prompt = (
+        "你是一个安防监控系统的智能助手，请根据以下监控统计数据，撰写一份约 300 字的中文安防监控日报。"
+        "内容应包括以下四部分（使用小标题分段）：①事件总体情况，②事件类型分布，③摄像头状态，④风险提示建议。\n"
+        "注意：不要编造我未提供的信息，不要做过多主观猜测。\n"
+        "特别说明：'区域入侵' 是指检测到人员进入了不允许进入的安全区域。\n\n"
+    )
+
+    prompt += f"📅 日期：{summary['日期']}\n"
+    prompt += f"📊 总报警事件数：{summary['总事件数']}\n"
+    prompt += f"🔴 未处理：{summary['未处理事件数']}，🟠 处理中：{summary['处理中事件数']}，🟢 已处理：{summary['已处理事件数']}\n\n"
+
+    prompt += "📌 事件类型统计：\n"
+    for k, v in summary['事件类型统计'].items():
+        prompt += f"- {k}：{v} 起\n"
+
+    prompt += "\n🎥 摄像头状态：\n"
+    prompt += f"- 总数：{summary['摄像头总数']}，在线：{summary['在线摄像头']}，离线：{summary['离线摄像头']}\n"
+
+    prompt += (
+        "\n🛡️ 请使用清晰的小标题，输出一段 300 字的自然语言中文报告，总结上述监控情况。\n"
+        "不要提及提示词、我提供的数据之外的内容，也不要使用假设或臆测语气。"
+    )
+
     return prompt.strip()
+
 
 #     prompt = """
 # 你是一个安防监控系统的智能助手，请根据以下数据生成一份简明的中文监控日报。

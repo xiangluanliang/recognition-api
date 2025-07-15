@@ -116,13 +116,12 @@ class EventLogSerializer(serializers.ModelSerializer):
     # status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     # 显示 camera_id 和 camera_name
-    camera_id = serializers.PrimaryKeyRelatedField(source='camera', read_only=True)
+    camera_id = serializers.PrimaryKeyRelatedField(source='camera')
     camera_name = serializers.CharField(source='camera.name', read_only=True)
 
     # 显示 person_id 和 person_name
     person_id = serializers.PrimaryKeyRelatedField(source='person', read_only=True)
     person_name = serializers.CharField(source='person.name', read_only=True)
-
 
     class Meta:
         model = EventLog
