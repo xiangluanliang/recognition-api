@@ -105,6 +105,13 @@ class WarningZoneViewSet(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
+    @action(detail=False, methods=['get'], url_path='by-camera/(?P<camera_id>[^/.]+)')
+    def get_by_camera(self, request, camera_id=None):
+        zones = self.queryset.filter(camera_id=camera_id)
+        serializer = self.get_serializer(zones, many=True)
+        return Response(serializer.data)
+
+
 class CameraViewSet(viewsets.ModelViewSet):
     queryset = Camera.objects.all()
     serializer_class = CameraSerializer
