@@ -5,7 +5,6 @@ from rest_framework.routers import DefaultRouter
 from django.conf.urls.static import static
 from django.conf import settings
 from django.urls import path
-from script.services.audioService.audio_api import AudioDetectView
 
 from .views.data_views import (
     OperationLogViewSet,
