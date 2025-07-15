@@ -107,7 +107,12 @@ class WarningZoneViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='by-camera/(?P<camera_id>[^/.]+)')
     def get_by_camera(self, request, camera_id=None):
-        zones = self.queryset.filter(camera_id=camera_id)
+        try:
+            camera_id_int = int(camera_id)
+        except ValueError:
+            return Response({"error": "camera_id必须是整数"}, status=400)
+
+        zones = self.queryset.filter(camera_id=camera_id_int)
         serializer = self.get_serializer(zones, many=True)
         return Response(serializer.data)
 
