@@ -116,6 +116,8 @@ class WarningZone(models.Model):
     zone_type = models.PositiveSmallIntegerField(null=False)
     zone_points = models.JSONField(null=False)
     is_active = models.BooleanField(null=False)
+    safe_distance = models.FloatField(null=True, blank=True, help_text="安全距离（米）")
+    safe_time = models.PositiveIntegerField(null=True, blank=True, help_text="安全时间（秒）")
 
     class Meta:
         db_table = 'warning_zones'
