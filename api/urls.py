@@ -5,7 +5,6 @@ from rest_framework.routers import DefaultRouter
 from django.conf.urls.static import static
 from django.conf import settings
 from django.urls import path
-from script.services.audioService.audio_api import AudioDetectView
 
 from .views.data_views import (
     OperationLogViewSet,
@@ -46,6 +45,5 @@ urlpatterns = [
     path('known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
     path('log-event/', LogEventAPI.as_view(), name='ai-log-event'),
     path('daily-report/', DailyReportDataAPI.as_view()),
-path('audio_detect/', AudioDetectView.as_view(), name='audio_detect'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

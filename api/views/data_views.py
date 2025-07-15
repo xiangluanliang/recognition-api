@@ -96,6 +96,18 @@ class WarningZoneViewSet(viewsets.ModelViewSet):
     serializer_class = WarningZoneSerializer
     permission_classes = [IsAuthenticated]
 
+    @action(detail=False, methods=['get'], url_path='by-camera/(?P<camera_id>[^/.]+)')
+    def get_by_camera(self, request, camera_id=None):
+        try:
+            camera_id_int = int(camera_id)
+        except ValueError:
+            return Response({"error": "camera_id必须是整数"}, status=400)
+
+        zones = self.queryset.filter(camera_id=camera_id_int)
+        serializer = self.get_serializer(zones, many=True)
+        return Response(serializer.data)
+
+
 class CameraViewSet(viewsets.ModelViewSet):
     queryset = Camera.objects.all()
     serializer_class = CameraSerializer
@@ -312,7 +324,7 @@ class SubmitDailyReportAPI(APIView):
     """
     接收本地AI机生成的报告文本，并存入数据库。
     """
-    permission_classes = [IsAuthenticated]  # 保护此接口，需要认证
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         """
