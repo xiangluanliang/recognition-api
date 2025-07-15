@@ -1,10 +1,10 @@
 # api/views/data_views.py
-import os
-from datetime import datetime, time
+
+from datetime import datetime
 from datetime import timedelta
 
 from django.contrib.auth import authenticate
-from django.contrib.sites import requests
+
 from django.db.models import Count
 from django.db.models.functions import TruncDay
 from django.utils import timezone
@@ -16,7 +16,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from werkzeug.debug import console
+
 
 from ..models import (
     User, OperationLog, Subject, WarningZone, Camera, AlarmLog, EventLog, DailyReport
@@ -95,15 +95,6 @@ class WarningZoneViewSet(viewsets.ModelViewSet):
     queryset = WarningZone.objects.all()
     serializer_class = WarningZoneSerializer
     permission_classes = [IsAuthenticated]
-
-    def create(self, request, *args, **kwargs):
-        safe_distance = request.data.get('safe_distance')
-        safe_time = request.data.get('safe_time')
-
-        print("收到的安全距离:", safe_distance)
-        print("收到的安全时间:", safe_time)
-
-        return super().create(request, *args, **kwargs)
 
 class CameraViewSet(viewsets.ModelViewSet):
     queryset = Camera.objects.all()
