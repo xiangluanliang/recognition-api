@@ -45,6 +45,5 @@ urlpatterns = [
     path('known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
     path('log-event/', LogEventAPI.as_view(), name='ai-log-event'),
     path('daily-report/', DailyReportDataAPI.as_view()),
-    path('audio_detect/', AudioDetectView.as_view(), name='audio_detect'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
