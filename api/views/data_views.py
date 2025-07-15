@@ -333,7 +333,7 @@ class SubmitDailyReportAPI(APIView):
     """
     接收本地AI机生成的报告文本，并存入数据库。
     """
-    permission_classes = [IsAuthenticated]  # 保护此接口，需要认证
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         """
