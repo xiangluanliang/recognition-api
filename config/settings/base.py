@@ -137,7 +137,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", 'https://27.106.110.151']
 
 AUTH_USER_MODEL = 'api.User'  # 如果你的 app 叫 api，就写 api.User
 

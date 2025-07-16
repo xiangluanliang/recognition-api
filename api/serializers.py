@@ -52,14 +52,13 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class WarningZoneSerializer(serializers.ModelSerializer):
-    # camera用PrimaryKeyRelatedField，直接传camera_id就行
+    # 直接传 camera_id
     camera = serializers.PrimaryKeyRelatedField(queryset=Camera.objects.all())
 
     class Meta:
         model = WarningZone
-        fields = ['id', 'camera', 'name', 'zone_type', 'zone_points', 'is_active']
+        fields = ['id', 'camera', 'name', 'zone_type', 'zone_points', 'is_active', 'safe_distance', 'safe_time']
         read_only_fields = ['id']
-
 
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
