@@ -1,5 +1,5 @@
 # api/views/data_views.py
-
+import logging
 from datetime import datetime
 from datetime import timedelta
 
@@ -29,7 +29,7 @@ from ..serializers import (
     AlarmLogSerializer, RegisterSerializer, EventLogSerializer, DailyReportSerializer
 )
 
-
+logger = logging.getLogger(__name__)
 class IsAdminOrSelf(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         # 管理员全权访问
@@ -277,44 +277,55 @@ class EventLogViewSet(viewsets.ModelViewSet):
 class DailyReportDataAPI(APIView):
     """
     为本地AI机提供生成日报所需的数据摘要。
+    (已增加健壮性和详细的错误处理)
     """
-    permission_classes = [IsAuthenticated]  # 保护此接口，需要认证
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        today = timezone.localdate()
-        start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
-        end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+        """
+        当接收到GET请求时，从数据库收集数据并返回。
+        """
+        try:
+            logger.info("DailyReportDataAPI: 开始为日报生成收集数据...")
 
-        alarms = AlarmLog.objects.select_related("event", "camera").filter(time__range=(start, end))
+            today = timezone.localdate()
+            start_of_day = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+            end_of_day = timezone.make_aware(datetime.combine(today, datetime.max.time()))
 
-        # 所有事件类型
-        all_event_types = alarms.values_list('event__event_type', flat=True).distinct()
+            # 查询当天的告警日志
+            alarms_today = AlarmLog.objects.filter(time__range=(start_of_day, end_of_day))
 
-        # 初始化结构
-        detailed_stats = {}
-
-        for event_type in all_event_types:
-            related_alarms = alarms.filter(event__event_type=event_type)
-            detailed_stats[event_type] = {
-                "count": related_alarms.count(),
-                "unprocessed": related_alarms.filter(status=0).count(),
-                "processing": related_alarms.filter(status=1).count(),
-                "processed": related_alarms.filter(status=2).count(),
-                "cameras": related_alarms.values("camera_id").distinct().count()
+            # 准备基础摘要信息
+            summary = {
+                '日期': str(today),
+                '总事件数': alarms_today.count(),
+                '未处理事件数': alarms_today.filter(status=0).count(),
+                '处理中事件数': alarms_today.filter(status=1).count(),
+                '已处理事件数': alarms_today.filter(status=2).count(),
+                '摄像头总数': Camera.objects.count(),
+                '在线摄像头': Camera.objects.filter(is_active=True).count(),
+                '各类型事件统计': {},
             }
 
-        summary = {
-            "日期": str(today),
-            "总事件数": alarms.count(),
-            "未处理事件数": alarms.filter(status=0).count(),
-            "处理中事件数": alarms.filter(status=1).count(),
-            "已处理事件数": alarms.filter(status=2).count(),
-            "摄像头总数": Camera.objects.count(),
-            "在线摄像头": Camera.objects.filter(is_active=True).count(),
-            "各类型事件统计": detailed_stats
-        }
+            type_counts = alarms_today.select_related('event').values_list('event__event_type').annotate(
+                count=Count('event__event_type'))
 
-        return Response(summary, status=status.HTTP_200_OK)
+            event_type_map = dict(EventLog.EVENT_TYPE_CHOICES)
+
+            for event_type_key, count in type_counts:
+                if event_type_key:
+                    display_name = event_type_map.get(event_type_key, event_type_key)
+                    summary['各类型事件统计'][display_name] = count
+
+            logger.info("DailyReportDataAPI: 数据收集成功。")
+            return Response(summary, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"DailyReportDataAPI 在生成数据时发生严重错误: {e}", exc_info=True)
+            return Response(
+                {"error": "服务器在生成报告数据时发生内部错误。", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class SubmitDailyReportAPI(APIView):
