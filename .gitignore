@@ -3,5 +3,10 @@ __pycache__/
 *.pyc
 .DS_Store
 myvenv/
+venv/
+.env.*
 .env
-.idea/script/received_videos/
+.idea/
+script/received_videos/
+media/
+dnn_models/

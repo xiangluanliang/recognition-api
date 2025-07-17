@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 
+
 class FeedbackAPITestCase(APITestCase):
     def setUp(self):
         """在每个测试方法运行前执行的设置"""
