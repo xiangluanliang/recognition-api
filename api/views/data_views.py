@@ -175,8 +175,8 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
         today_param = self.request.query_params.get("today")
 
         if today_param == "true":
-            today = timezone.now().date()
-            queryset = queryset.filter(event__time__date=today)
+            today = (timezone.now()+timedelta(hours=8)).date()
+            queryset = queryset.filter(time__date=today)
 
         return queryset
 
@@ -195,8 +195,8 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='trend')
     def trend(self, request):
-        today = now().date()
-        start_date = today - timedelta(days=6)  # 最近7天
+        today = (now()+timedelta(hours=8)).date()
+        start_date = today - timedelta(days=6)+timedelta(hours=8)  # 最近7天
 
         alarms = (
             AlarmLog.objects
@@ -212,7 +212,7 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
         for alarm in alarms:
             day = alarm['day']
             if day:
-                count_dict[day.strftime('%m-%d')] = alarm['count']
+                count_dict[(day+timedelta(hours=8)).strftime('%m-%d')] = alarm['count']
         count_list = [count_dict.get(date, 0) for date in date_list]
         # print("alarm trend 数据原始结果：", list(alarms))
         return Response({
@@ -302,17 +302,57 @@ class DailyReportDataAPI(APIView):
                 '各类型事件统计': {},
             }
 
-            type_counts = alarms_today.values('event__event_type').annotate(count=Count('id')).order_by()
-
             event_type_map = dict(EventLog.EVENT_TYPE_CHOICES)
 
-            for item in type_counts:
-                event_type_key = item.get('event__event_type')
-                count = item.get('count')
+            # 统计各事件类型总数
+            total_counts = alarms_today.values('event__event_type').annotate(count=Count('id')).order_by()
+            # 状态分布
+            unprocessed_counts = alarms_today.filter(status=0).values('event__event_type').annotate(count=Count('id'))
+            processing_counts = alarms_today.filter(status=1).values('event__event_type').annotate(count=Count('id'))
+            processed_counts = alarms_today.filter(status=2).values('event__event_type').annotate(count=Count('id'))
+            # 摄像头覆盖数量
+            camera_counts = alarms_today.values('event__event_type', 'event__camera').distinct().values('event__event_type').annotate(cameras=Count('event__camera'))
 
-                if event_type_key and count:
-                    display_name = event_type_map.get(event_type_key, event_type_key)
-                    summary['各类型事件统计'][display_name] = count
+            # 整合统计数据
+            event_stats = {}
+            for item in total_counts:
+                event_type_key = item.get('event__event_type')
+                if event_type_key is None:
+                    continue
+                name = event_type_map.get(event_type_key, event_type_key)
+                event_stats[name] = {
+                    "count": item["count"],
+                    "unprocessed": 0,
+                    "processing": 0,
+                    "processed": 0,
+                    "cameras": 0,
+                }
+
+            for group in unprocessed_counts:
+                k = group['event__event_type']
+                name = event_type_map.get(k, k)
+                if name in event_stats:
+                    event_stats[name]["unprocessed"] = group["count"]
+
+            for group in processing_counts:
+                k = group['event__event_type']
+                name = event_type_map.get(k, k)
+                if name in event_stats:
+                    event_stats[name]["processing"] = group["count"]
+
+            for group in processed_counts:
+                k = group['event__event_type']
+                name = event_type_map.get(k, k)
+                if name in event_stats:
+                    event_stats[name]["processed"] = group["count"]
+
+            for group in camera_counts:
+                k = group['event__event_type']
+                name = event_type_map.get(k, k)
+                if name in event_stats:
+                    event_stats[name]["cameras"] = group["cameras"]
+
+            summary['各类型事件统计'] = event_stats
 
             logger.info("DailyReportDataAPI: 数据收集成功。")
             return Response(summary, status=status.HTTP_200_OK)
