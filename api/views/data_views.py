@@ -362,21 +362,53 @@ class SubmitDailyReportAPI(APIView):
         message = "日报更新成功。" if not created else "日报创建成功。"
         return Response({"status": "success", "message": message}, status=status.HTTP_201_CREATED)
 
+
 @receiver(post_save, sender=EventLog)
 def create_alarm_on_event(sender, instance, created, **kwargs):
     """
     当一个新的EventLog被创建时，检查是否需要生成告警。
+    - 条件1: 置信度必须大于0.6。
+    - 条件2: 在一个时间窗口内（例如1分钟），同类型、同摄像头的事件只生成一次告警。
     """
-    if created:
-        event = instance
-        ALARM_WORTHY_EVENTS = ['fire', 'intrusion', 'conflict', 'face_match', 'audio_screaming']
+    if not created:
+        return
 
-        if event.event_type in ALARM_WORTHY_EVENTS:
-            AlarmLog.objects.create(
-                title=f"触发告警：{event.get_event_type_display()}",
-                event=event,
-                time=event.time,
-                status=0,
-                description=f"检测到 {event.get_event_type_display()}，摄像头ID：{event.camera.id if event.camera else '未知'}"
-            )
-            print(f"信号触发：为事件 {event.id} 创建了新的告警记录。")
+    event = instance
+    ALARM_WORTHY_EVENTS = ['fire', 'intrusion', 'conflict', 'face_match', 'audio_screaming', 'person_fall']
+    CONFIDENCE_THRESHOLD = 0.6
+    ALARM_COOLDOWN_PERIOD = timedelta(minutes=1)  # 定义告警冷却时间为5分钟
+
+    if event.event_type not in ALARM_WORTHY_EVENTS:
+        return
+
+    # 置信度是否达标
+    if not hasattr(event, 'confidence') or event.confidence is None or event.confidence <= CONFIDENCE_THRESHOLD:
+        print(
+            f"信号忽略：事件 {event.id} ({event.event_type}) 置信度 {event.confidence} 未达到阈值 {CONFIDENCE_THRESHOLD}。")
+        return
+
+    # 在冷却时间内，是否已存在同类告警
+    cooldown_start_time = event.time - ALARM_COOLDOWN_PERIOD
+
+    # 查询在过去5分钟内，是否已有来自同一摄像头、同一类型的事件触发了告警
+    recent_similar_alarm_exists = AlarmLog.objects.filter(
+        event__camera=event.camera,
+        event__event_type=event.event_type,
+        time__gte=cooldown_start_time
+    ).exists()
+
+    if recent_similar_alarm_exists:
+        print(f"信号忽略：事件 {event.id} ({event.event_type}) 在冷却时间内，已存在同类告警。")
+        return
+
+    try:
+        AlarmLog.objects.create(
+            title=f"触发告警：{event.get_event_type_display()}",
+            event=event,
+            time=event.time,
+            status=0,  # 状态：未处理
+            description=f"检测到 {event.get_event_type_display()} (置信度: {event.confidence:.2f})，摄像头：{event.camera.name if event.camera else '未知'}"
+        )
+        print(f"信号成功触发：为事件 {event.id} 创建了新的告警记录。")
+    except Exception as e:
+        logger.error(f"创建告警记录时发生错误: {e}", exc_info=True)
