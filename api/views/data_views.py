@@ -176,7 +176,7 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
 
         if today_param == "true":
             today = (timezone.now()+timedelta(hours=8)).date()
-            queryset = queryset.filter(event__time__date=today)
+            queryset = queryset.filter(time__date=today)
 
         return queryset
 
