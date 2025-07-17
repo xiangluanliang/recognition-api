@@ -311,7 +311,7 @@ class DailyReportDataAPI(APIView):
             processing_counts = alarms_today.filter(status=1).values('event__event_type').annotate(count=Count('id'))
             processed_counts = alarms_today.filter(status=2).values('event__event_type').annotate(count=Count('id'))
             # 摄像头覆盖数量
-            camera_counts = alarms_today.values('event__event_type', 'camera__id').distinct().values('event__event_type').annotate(cameras=Count('camera__id'))
+            camera_counts = alarms_today.values('event__event_type', 'event__camera').distinct().values('event__event_type').annotate(cameras=Count('event__camera'))
 
             # 整合统计数据
             event_stats = {}
