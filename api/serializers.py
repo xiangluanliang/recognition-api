@@ -63,7 +63,7 @@ class WarningZoneSerializer(serializers.ModelSerializer):
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Camera
-        ffields = ['id', 'name', 'location', 'camera_type', 'is_active', 'url', 'password', 'active_detectors']
+        fields = ['id', 'name', 'location', 'camera_type', 'is_active', 'url', 'password', 'active_detectors']
         read_only_fields = ['id']
 
     def create(self, validated_data):
