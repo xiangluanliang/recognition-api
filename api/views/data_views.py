@@ -277,14 +277,11 @@ class EventLogViewSet(viewsets.ModelViewSet):
 class DailyReportDataAPI(APIView):
     """
     为本地AI机提供生成日报所需的数据摘要。
-    (已增加健壮性和详细的错误处理)
+    (已进一步优化查询逻辑和健壮性)
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        """
-        当接收到GET请求时，从数据库收集数据并返回。
-        """
         try:
             logger.info("DailyReportDataAPI: 开始为日报生成收集数据...")
 
@@ -292,28 +289,28 @@ class DailyReportDataAPI(APIView):
             start_of_day = timezone.make_aware(datetime.combine(today, datetime.min.time()))
             end_of_day = timezone.make_aware(datetime.combine(today, datetime.max.time()))
 
-            # 查询当天的告警日志
             alarms_today = AlarmLog.objects.filter(time__range=(start_of_day, end_of_day))
 
-            # 准备基础摘要信息
             summary = {
                 '日期': str(today),
-                '总事件数': alarms_today.count(),
-                '未处理事件数': alarms_today.filter(status=0).count(),
-                '处理中事件数': alarms_today.filter(status=1).count(),
-                '已处理事件数': alarms_today.filter(status=2).count(),
+                '总告警数': alarms_today.count(),
+                '未处理告警数': alarms_today.filter(status=0).count(),
+                '处理中告警数': alarms_today.filter(status=1).count(),
+                '已处理告警数': alarms_today.filter(status=2).count(),
                 '摄像头总数': Camera.objects.count(),
                 '在线摄像头': Camera.objects.filter(is_active=True).count(),
                 '各类型事件统计': {},
             }
 
-            type_counts = alarms_today.select_related('event').values_list('event__event_type').annotate(
-                count=Count('event__event_type'))
+            type_counts = alarms_today.values('event__event_type').annotate(count=Count('id')).order_by()
 
             event_type_map = dict(EventLog.EVENT_TYPE_CHOICES)
 
-            for event_type_key, count in type_counts:
-                if event_type_key:
+            for item in type_counts:
+                event_type_key = item.get('event__event_type')
+                count = item.get('count')
+
+                if event_type_key and count:
                     display_name = event_type_map.get(event_type_key, event_type_key)
                     summary['各类型事件统计'][display_name] = count
 
