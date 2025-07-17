@@ -110,6 +110,17 @@ class WarningZoneViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(zones, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='safety-config/(?P<camera_id>[^/.]+)')
+    def get_safety_config(self, request, camera_id=None):
+        try:
+            camera_id_int = int(camera_id)
+        except ValueError:
+            return Response({"error": "camera_id必须是整数"}, status=400)
+
+        zones = self.queryset.filter(camera_id=camera_id_int).values('id', 'safe_distance', 'safe_time')
+
+        return Response(list(zones))
+
 
 class CameraViewSet(viewsets.ModelViewSet):
     queryset = Camera.objects.all()
