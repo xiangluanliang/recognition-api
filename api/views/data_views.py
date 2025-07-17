@@ -278,32 +278,38 @@ class DailyReportDataAPI(APIView):
     permission_classes = [IsAuthenticated]  # 保护此接口，需要认证
 
     def get(self, request, *args, **kwargs):
-        """
-        当接收到GET请求时，从数据库收集数据并返回。
-        """
-        # 这部分逻辑直接从您的脚本中移入
         today = timezone.localdate()
         start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
         end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
 
-        alarms = AlarmLog.objects.filter(time__range=(start, end))
+        alarms = AlarmLog.objects.select_related("event", "camera").filter(time__range=(start, end))
+
+        # 所有事件类型
+        all_event_types = alarms.values_list('event__event_type', flat=True).distinct()
+
+        # 初始化结构
+        detailed_stats = {}
+
+        for event_type in all_event_types:
+            related_alarms = alarms.filter(event__event_type=event_type)
+            detailed_stats[event_type] = {
+                "count": related_alarms.count(),
+                "unprocessed": related_alarms.filter(status=0).count(),
+                "processing": related_alarms.filter(status=1).count(),
+                "processed": related_alarms.filter(status=2).count(),
+                "cameras": related_alarms.values("camera_id").distinct().count()
+            }
 
         summary = {
-            '日期': str(today),
-            '总事件数': alarms.count(),
-            '未处理事件数': alarms.filter(status=0).count(),
-            '处理中事件数': alarms.filter(status=1).count(),
-            '已处理事件数': alarms.filter(status=2).count(),
-            '摄像头总数': Camera.objects.count(),
-            '在线摄像头': Camera.objects.filter(is_active=True).count(),
-            '各类型事件统计': {},
+            "日期": str(today),
+            "总事件数": alarms.count(),
+            "未处理事件数": alarms.filter(status=0).count(),
+            "处理中事件数": alarms.filter(status=1).count(),
+            "已处理事件数": alarms.filter(status=2).count(),
+            "摄像头总数": Camera.objects.count(),
+            "在线摄像头": Camera.objects.filter(is_active=True).count(),
+            "各类型事件统计": detailed_stats
         }
-
-        type_counts = alarms.values('event__event_type').annotate(count=Count('id'))
-        for item in type_counts:
-            event_type = item.get('event__event_type')
-            if event_type:
-                summary['各类型事件统计'][event_type] = item['count']
 
         return Response(summary, status=status.HTTP_200_OK)
 
