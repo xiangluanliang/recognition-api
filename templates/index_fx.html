@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>服务平台模板</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/graphic.css">
+
+    <script src="js/jquery-2.2.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+	<script src="js/graphic.js"></script>
+
+
+    <style>
+        .t_btn {
+            margin-top: 20px;
+        }
+
+        .t_btn li {
+            display: inline-block;
+            margin: 0 0 20px 20px;
+        }
+
+        .t_btn button,
+        .t_a {
+            display: inline-block;
+            padding: 10px 5px;
+            width: 80px;
+            border-style: solid;
+            border-width: 0;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            line-height: normal;
+            margin: 0 0 0.5em 0;
+            position: relative;
+            text-decoration: none;
+            text-align: center;
+            font-size: 1em;
+            background-color: #2C58A6;
+            border-color: #0263ff;
+            color: white;
+            box-shadow: 0 -2px 0 rgba(0, 0, 0, 0.2) inset !important;
+            margin-right: 0.5em;
+            border-radius: 4px;
+        }
+
+        .t_height {
+            line-height: 80px;
+            position: absolute;
+            right: 28px;
+            top: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /*显示时间*/
+        #panel {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 38px;
+            padding: 10px;
+        }
+
+        /*显示loading*/
+        #loading {
+            position: absolute;
+            left: 50%;
+            top: 100px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!--header-->
+    <div class="header">
+        <div class="bg_header">
+            <div class="header_nav fl t_title">
+                服务平台模板
+            </div>
+        </div>
+        <div class="header_nav fl">
+        </div>
+    </div>
+    <!--main-->
+    <div class="data_content">
+        <div class="data_main">
+            <div class="main_left fl">
+                <div class="left_1">
+                    <ul class="t_btn">
+                        <li>
+                            <button class="t_btn0" onclick="show_map_jn()">按钮0</button>
+                        </li>
+                        <li>
+                            <button class="t_btn1" onclick="show_time()">按钮1</button>
+                        </li>
+                        <li>
+                            <button class="t_btn2" onclick="show_heart()">按钮2</button>
+                        </li>
+                        <li>
+                            <button class="t_btn3"  onclick="show_pop()">按钮3</button>
+                        </li>
+                        <li>
+                            <button class="t_btn4" onclick="show_week()">按钮4</button>
+                        </li>
+                        <li>
+                            <button class="t_btn5" onclick="show_map_sd()">按钮5</button>
+                        </li>
+                        <li>
+                            <button class="t_btn6" onclick="show_weather()">按钮6</button>
+                        </li>
+                        <li>
+                            <button class="t_btn7" onclick="show_num()">按钮7</button>
+                        </li>
+                        <li>
+                            <button class="t_btn8" onclick="show_distance()">按钮8</button>
+                        </li>
+                        <li>
+                            <button class="t_btn9" onclick="show_speed()">按钮9</button>
+                        </li>
+                    </ul>
+                </div>
+            <div class="left_2" style="display:none">
+                <div class="main_title">
+                    标题
+                </div>
+            </div>
+        </div>
+
+        <div class="main_center fl">
+            <!--中间大图-->
+            <div class="center_text t_cos0">
+                <form name="f">
+                    <input type="datetime-local" value="2013-09-12T00:00" name="t"/>
+                    <input type="button" value="搜索" onclick="getValue();"/>
+                </form>
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    这是一个标题
+                </div>
+                <div id="chart_0" style="width:100%;height:100%;"></div>
+
+            </div>
+            <!--按钮1对应-->
+            <div class="center_text t_cos3" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮1标题
+                </div>
+                <div id="chart_1" class="chart" style="width:100%;height:778px;"></div>
+            </div>
+            <!--按钮2对应-->
+            <div class="center_text t_cos14" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮2标题
+                </div>
+                <div id="map"></div>
+                <div id='panel'></div>
+                <div id='loading'>加载中。。</div>
+                <div id="chart_2" class="chart" style="width:100%;height:778px; cursor: pointer;"></div>
+            </div>
+            <!--按钮3-->
+            <div class="center_text t_cos13" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮3标题
+                </div>
+                <div id="chart_3" class="chart" style="height: 750px; width: 1300px; left: 10px; top: 20px"></div>
+            </div>
+            <!--按钮4-->
+            <div class="center_text t_cos2" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮4标题
+                </div>
+                <div id="chart_4" style="height: 750px; width: 1200px; left: 5px; top: 20px"></div>
+            </div>
+            <!--按钮5-->
+            <div class="center_text t_cos1" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮5标题
+                </div>
+                <div id="chart_5" class="chart" style="width:100%;height:778px;"></div>
+            </div>
+            <!--按钮6-->
+            <div class="center_text t_cos7" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮6标题
+                </div>
+                <div id="chart_6" class="chart" style="width:100%;height:778px;"></div>
+            </div>
+            <!--按钮7-->
+            <div class="center_text t_cos8" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮7标题
+                </div>
+                <div id="chart_7" class="chart" style="width:100%;height:778px;"></div>
+            </div>
+            <!--按钮8-->
+            <div class="center_text t_cos9" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮8标题
+                </div>
+                <div id="chart_8" class="chart" style="width:100%;height:778px;"></div>
+            </div>
+            <!--按钮9-->
+            <div class="center_text t_cos12" style="display:none">
+                <!--左上边框-->
+                <div class="t_line_box">
+                    <i class="t_l_line"></i>
+                    <i class="l_t_line"></i>
+                </div>
+                <!--右上边框-->
+                <div class="t_line_box">
+                    <i class="t_r_line"></i>
+                    <i class="r_t_line"></i>
+                </div>
+                <!--左下边框-->
+                <div class="t_line_box">
+                    <i class="l_b_line"></i>
+                    <i class="b_l_line"></i>
+                </div>
+                <!--右下边框-->
+                <div class="t_line_box">
+                    <i class="r_b_line"></i>
+                    <i class="b_r_line"></i>
+                </div>
+                <div class="main_title">
+                    按钮9标题
+                </div>
+                <div id="chart_9" class="chart" style="width:100%;height:778px;"></div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+</body>
+
+</html>
