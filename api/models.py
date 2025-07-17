@@ -99,6 +99,8 @@ class EventLog(models.Model):
         ('audio_screaming', '尖叫声'),
         ('audio_explosion', '爆炸声'),
         ('audio_gunshot_gunfire', '枪声'),
+        ('liveness_fraud', '活体检测欺诈'),
+        ('stranger_detected', '陌生人检测'),
     ]
 
     event_type = models.CharField(max_length=32, choices=EVENT_TYPE_CHOICES)
