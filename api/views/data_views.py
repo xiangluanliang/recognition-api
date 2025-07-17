@@ -414,7 +414,7 @@ def create_alarm_on_event(sender, instance, created, **kwargs):
         return
 
     event = instance
-    ALARM_WORTHY_EVENTS = ['fire', 'intrusion', 'conflict', 'face_match', 'audio_screaming', 'person_fall']
+    ALARM_WORTHY_EVENTS = ['fire', 'intrusion', 'conflict', 'face_match', 'audio_screaming', 'person_fall','liveness_fraud']
     CONFIDENCE_THRESHOLD = 0.6
     ALARM_COOLDOWN_PERIOD = timedelta(minutes=1)  # 定义告警冷却时间为5分钟
 
