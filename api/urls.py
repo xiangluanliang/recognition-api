@@ -44,6 +44,7 @@ urlpatterns = [
     path('', include(alarm_router.urls)),
     path('known-faces/', KnownFacesDataAPI.as_view(), name='ai-known-faces'),
     path('log-event/', LogEventAPI.as_view(), name='ai-log-event'),
-    path('daily-report/', DailyReportDataAPI.as_view()),
+    path('daily-report/data/', DailyReportDataAPI.as_view(), name='daily-report-data'),
+    path('daily-report/submit/', SubmitDailyReportAPI.as_view(), name='daily-report-submit')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

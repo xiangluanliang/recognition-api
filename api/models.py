@@ -74,6 +74,11 @@ class Camera(models.Model):
     url = models.CharField(max_length=64, null=True)
     password = models.CharField(max_length=64, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    active_detectors = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='例如：["fall_detection", "intrusion_detection"]'
+    )
 
     class Meta:
         db_table = 'cameras'
@@ -91,6 +96,9 @@ class EventLog(models.Model):
         ('fire', '火灾'),
         ('intrusion', '区域入侵'),
         ('conflict', '打架冲突'),
+        ('audio_screaming', '尖叫声'),
+        ('audio_explosion', '爆炸声'),
+        ('audio_gunshot_gunfire', '枪声'),
     ]
 
     event_type = models.CharField(max_length=32, choices=EVENT_TYPE_CHOICES)
@@ -132,7 +140,7 @@ class AlarmLog(models.Model):
     id = models.BigAutoField(primary_key=True)
     # 注意：这里的source_id可能指向不同的表，是一个通用外键场景，暂时保留
     title = models.CharField(null=True, blank=True)
-    event = models.ForeignKey(EventLog, on_delete=models.CASCADE, db_column='event_id', default="")
+    event = models.OneToOneField(EventLog, on_delete=models.CASCADE, db_column='event_id')
 
     time = models.DateTimeField(null=False)
     result = models.CharField(max_length=64, null=True, blank=True)

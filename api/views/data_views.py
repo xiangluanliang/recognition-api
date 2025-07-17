@@ -7,6 +7,8 @@ from django.contrib.auth import authenticate
 
 from django.db.models import Count
 from django.db.models.functions import TruncDay
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.timezone import now
 from rest_framework import permissions, viewsets, status
@@ -268,20 +270,6 @@ class EventLogViewSet(viewsets.ModelViewSet):
     serializer_class = EventLogSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        event = serializer.save()
-        print(f"记录新事件：{event.event_type}，来自摄像头：{event.camera_id}")
-
-        if event.event_type in ['fire', 'intrusion', 'conflict', 'face_match']:
-            AlarmLog.objects.create(
-                title=f"触发告警：{event.get_event_type_display()}",
-                event=event,
-                time=event.time,
-                result=None,
-                status=0,
-                description=f"检测到 {event.get_event_type_display()}，摄像头ID：{event.camera.id if event.camera else '未知'}"
-            )
-
 
 class DailyReportDataAPI(APIView):
     """
@@ -356,3 +344,22 @@ class SubmitDailyReportAPI(APIView):
 
         message = "日报更新成功。" if not created else "日报创建成功。"
         return Response({"status": "success", "message": message}, status=status.HTTP_201_CREATED)
+
+@receiver(post_save, sender=EventLog)
+def create_alarm_on_event(sender, instance, created, **kwargs):
+    """
+    当一个新的EventLog被创建时，检查是否需要生成告警。
+    """
+    if created:
+        event = instance
+        ALARM_WORTHY_EVENTS = ['fire', 'intrusion', 'conflict', 'face_match', 'audio_screaming']
+
+        if event.event_type in ALARM_WORTHY_EVENTS:
+            AlarmLog.objects.create(
+                title=f"触发告警：{event.get_event_type_display()}",
+                event=event,
+                time=event.time,
+                status=0,
+                description=f"检测到 {event.get_event_type_display()}，摄像头ID：{event.camera.id if event.camera else '未知'}"
+            )
+            print(f"信号触发：为事件 {event.id} 创建了新的告警记录。")

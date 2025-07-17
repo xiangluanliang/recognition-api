@@ -63,7 +63,7 @@ class WarningZoneSerializer(serializers.ModelSerializer):
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Camera
-        fields = ['id', 'name', 'location', 'camera_type', 'is_active', 'url', 'password']
+        ffields = ['id', 'name', 'location', 'camera_type', 'is_active', 'url', 'password', 'active_detectors']
         read_only_fields = ['id']
 
     def create(self, validated_data):
@@ -114,27 +114,19 @@ class EventLogSerializer(serializers.ModelSerializer):
     # event_type_display = serializers.CharField(source='get_event_type_display', read_only=True)
     # status_display = serializers.CharField(source='get_status_display', read_only=True)
 
-    # 显示 camera_id 和 camera_name
-    camera_id = serializers.PrimaryKeyRelatedField(queryset=Camera.objects.all(),source='camera')
     camera_name = serializers.CharField(source='camera.name', read_only=True)
-
-    # 显示 person_id 和 person_name
-    person_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(),source='person')
     person_name = serializers.CharField(source='person.name', read_only=True)
+
+    camera = serializers.PrimaryKeyRelatedField(queryset=Camera.objects.all())
+    person = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), allow_null=True, required=False)
 
     class Meta:
         model = EventLog
         fields = [
-            'id',
-            'event_type',
-            'camera_id',
-            'camera_name',
-            'time',
-            'confidence',
-            'image_path',
-            'video_clip_path',
-            'person_id',
-            'person_name',
+            'id', 'event_type', 'time', 'confidence',
+            'image_path', 'video_clip_path',
+            'camera', 'camera_name',
+            'person', 'person_name',
         ]
 
 
