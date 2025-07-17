@@ -175,7 +175,7 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
         today_param = self.request.query_params.get("today")
 
         if today_param == "true":
-            today = (timezone.now()+timedelta(hours=8)).date()
+            today = timezone.now().date()
             queryset = queryset.filter(time__date=today)
 
         return queryset
@@ -195,8 +195,8 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='trend')
     def trend(self, request):
-        today = (now()+timedelta(hours=8)).date()
-        start_date = today - timedelta(days=6)+timedelta(hours=8)  # 最近7天
+        today = now().date()
+        start_date = today - timedelta(days=6)# 最近7天
 
         alarms = (
             AlarmLog.objects
@@ -212,7 +212,7 @@ class AlarmLogViewSet(viewsets.ModelViewSet):
         for alarm in alarms:
             day = alarm['day']
             if day:
-                count_dict[(day+timedelta(hours=8)).strftime('%m-%d')] = alarm['count']
+                count_dict[day.strftime('%m-%d')] = alarm['count']
         count_list = [count_dict.get(date, 0) for date in date_list]
         # print("alarm trend 数据原始结果：", list(alarms))
         return Response({
