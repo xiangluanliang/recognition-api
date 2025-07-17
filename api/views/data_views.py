@@ -11,6 +11,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.timezone import now
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, viewsets, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -269,6 +270,8 @@ class EventLogViewSet(viewsets.ModelViewSet):
     queryset = EventLog.objects.all().order_by('-time')
     serializer_class = EventLogSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['camera', 'event_type']
 
 
 class DailyReportDataAPI(APIView):
